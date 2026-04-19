@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Namarq AI</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@300;400&family=EB+Garamond&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --ivory: #FAF8F4;
+  --olive: #6B705C;
+  --brown: #3E2F23;
+  --beige: #D6CCC2;
+  --amber: #A47148;
+}
+
+body {
+  margin: 0;
+  background: var(--ivory);
+  color: var(--brown);
+  font-family: 'EB Garamond', serif;
+}
+
+.container {
+  max-width: 800px;
+  margin: auto;
+  padding: 80px 20px;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.logo h1 {
+  font-family: 'Cormorant Garamond';
+  letter-spacing: 0.5em;
+  font-weight: 300;
+}
+
+.logo span {
+  font-family: 'Montserrat';
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  color: var(--olive);
+}
+
+.card {
+  background: white;
+  padding: 40px;
+  border: 1px solid var(--beige);
+}
+
+/* INPUT */
+input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--beige);
+  font-family: 'EB Garamond';
+  font-size: 16px;
+}
+
+/* BUTTON */
+button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: var(--brown);
+  color: white;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--olive);
+}
+
+/* RESULT */
+.result {
+  margin-top: 40px;
+  padding: 30px;
+  border: 1px solid var(--beige);
+  background: #fff;
+  line-height: 1.8;
+}
+
+/* headings */
+.result h2 {
+  font-family: 'Cormorant Garamond';
+  font-size: 26px;
+}
+
+.result h3 {
+  font-family: 'Montserrat';
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--olive);
+}
+
+/* highlight */
+.result p:first-of-type {
+  font-style: italic;
+  border-left: 2px solid var(--amber);
+  padding-left: 15px;
+}
+
+/* loading */
+.loading {
+  text-align: center;
+  font-family: 'Montserrat';
+  letter-spacing: 0.2em;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="logo">
+    <h1>NAMARQ</h1>
+    <span>PERFUME HOUSE</span>
+  </div>
+
+  <div class="card">
+
+    <!-- ✅ INPUT واحد بس -->
+    <input id="nameInput" placeholder="Enter perfume name (e.g. Dior Sauvage)">
+
+    <button onclick="generate()" id="btn">GENERATE</button>
+
+    <div id="result" class="result"></div>
+
+  </div>
+
+</div>
+
+<script>
+async function generate() {
+
+  const name = document.getElementById("nameInput").value.trim();
+  const btn = document.getElementById("btn");
+  const result = document.getElementById("result");
+
+  if (!name) {
+    result.innerHTML = "<p>❌ Please enter perfume name</p>";
+    return;
+  }
+
+  btn.innerText = "Generating...";
+  btn.disabled = true;
+
+  result.innerHTML = "<div class='loading'>LOADING...</div>";
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ name })
+    });
+
+    const data = await res.json();
+
+    result.innerHTML = formatOutput(data.output);
+
+  } catch {
+    result.innerHTML = "<p>❌ Error</p>";
+  }
+
+  btn.innerText = "GENERATE";
+  btn.disabled = false;
+}
+
+
+// 🎨 format output
+function formatOutput(text) {
+  if (!text) return "";
+
+  let html = text;
+  html = html.replace(/## (.*)/g, '<h2>$1</h2>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<h3>$1</h3>');
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = "<p>" + html + "</p>";
+
+  return html;
+}
+</script>
+
+</body>
+</html>
