@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
     const OR_KEY = process.env.OPENROUTER_API_KEY;
 
-    // 🔹 Helper
+    // ---------- Helper: call model safely ----------
     async function ask(model, prompt) {
       try {
         const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -31,11 +31,19 @@ export default async function handler(req, res) {
       }
     }
 
-    // 🔥 STEP 1 — Fetch perfume data (attempt 1)
-    const prompt1 = `
-Give accurate perfume data for: ${name}
+    // ---------- STEP 1: Deep search (attempt A) ----------
+    const fetchPrompt = `
+You are a perfume expert.
 
-Return JSON only:
+Task: Retrieve ACCURATE data for "${name}".
+
+Rules:
+- Use well-known public knowledge (Fragrantica / Parfumo style)
+- Prefer real known notes if the perfume is popular
+- If uncertain, return best-known accords instead of guessing
+
+Return ONLY JSON:
+
 {
  "top": "...",
  "heart": "...",
@@ -46,64 +54,65 @@ Return JSON only:
 NO EXTRA TEXT
 `;
 
-    let data1 = await ask("google/gemini-2.0-flash-exp:free", prompt1);
-    let text1 = data1?.choices?.[0]?.message?.content || "{}";
+    const a = await ask("google/gemini-2.0-flash-exp:free", fetchPrompt);
+    const b = await ask("mistralai/mistral-7b-instruct:free", fetchPrompt);
 
-    // 🔥 STEP 2 — Fetch again (attempt 2)
-    let data2 = await ask("mistralai/mistral-7b-instruct:free", prompt1);
-    let text2 = data2?.choices?.[0]?.message?.content || "{}";
-
-    function parseJSON(txt) {
+    function parse(txt) {
       try { return JSON.parse(txt); } catch { return {}; }
     }
 
-    const p1 = parseJSON(text1);
-    const p2 = parseJSON(text2);
+    const p1 = parse(a?.choices?.[0]?.message?.content || "{}");
+    const p2 = parse(b?.choices?.[0]?.message?.content || "{}");
 
-    // 🔥 STEP 3 — Merge + validate
+    // ---------- STEP 2: Merge + confidence ----------
     function pick(a, b, fallback) {
-      if (a && b && a === b) return { value: a, score: 2 };
-      if (a && b && a !== b) return { value: a, score: 1 };
-      if (a) return { value: a, score: 1 };
-      if (b) return { value: b, score: 1 };
-      return { value: fallback, score: 0 };
+      if (a && b && a === b) return { v: a, s: 2 };
+      if (a && b && a !== b) return { v: a, s: 1 };
+      if (a) return { v: a, s: 1 };
+      if (b) return { v: b, s: 1 };
+      return { v: fallback, s: 0 };
     }
 
-    const topPick = pick(p1.top, p2.top, "citrus, fresh");
-    const heartPick = pick(p1.heart, p2.heart, "floral notes");
-    const basePick = pick(p1.base, p2.base, "woody, musk");
-    const genderPick = pick(p1.gender, p2.gender, "unisex");
-    const vibePick = pick(p1.vibe, p2.vibe, "elegant");
+    const topP = pick(p1.top, p2.top, "citrus, fresh");
+    const heartP = pick(p1.heart, p2.heart, "aromatic, spicy");
+    const baseP = pick(p1.base, p2.base, "woody, musk");
+    const genderP = pick(p1.gender, p2.gender, "unisex");
+    const vibeP = pick(p1.vibe, p2.vibe, "elegant");
 
-    const totalScore = topPick.score + heartPick.score + basePick.score;
-
+    const score = topP.s + heartP.s + baseP.s;
     let confidence = "Low";
-    if (totalScore >= 5) confidence = "High";
-    else if (totalScore >= 3) confidence = "Medium";
+    if (score >= 5) confidence = "High";
+    else if (score >= 3) confidence = "Medium";
 
-    const top = topPick.value;
-    const heart = heartPick.value;
-    const base = basePick.value;
-    const gender = genderPick.value;
-    const vibe = vibePick.value;
+    const top = topP.v;
+    const heart = heartP.v;
+    const base = baseP.v;
+    const gender = genderP.v;
+    const vibe = vibeP.v;
 
-    // 🔥 STEP 4 — Generate SEO
-    const slug = (name || "perfume")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-");
+    // ---------- STEP 3: SEO generation (luxury + grammar) ----------
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
     const seoPrompt = `
-You are the SEO Engine for Namarq Perfumes Egypt.
+You are a luxury perfume copywriter (Dior/Tom Ford style).
 
-### MY INPUTS:
-Product Name: ${name}
+Write premium, natural English.
+
+Rules:
+- Use correct grammar (An vs A)
+- Avoid robotic listing
+- Blend notes smoothly
+- Keep tone elegant and refined
+
+Data:
+Name: ${name}
 Gender: ${gender}
-Top Notes: ${top}
-Heart Notes: ${heart}
-Base Notes: ${base}
-Vibe/Occasion: ${vibe}
+Top: ${top}
+Heart: ${heart}
+Base: ${base}
+Vibe: ${vibe}
 
-### OUTPUT FORMAT (STRICT):
+OUTPUT:
 
 ## Short description
 
@@ -111,21 +120,18 @@ New · SEO Recommended
 
 150/200 (Recommended)
 
-A luxury ${gender} fragrance with ${top}, ${heart} and ${base}. A bold statement scent at Namarq Egypt.
+[Write a smooth, elegant description]
 
 ## SEO settings
 
 **Product URL**
 ../product/${slug}
-https://namarq-perfumes.online/en/product/all/${slug}
 
 **Title**
-
 ${name} Perfume | Namarq Perfumes Egypt
 
 **Description**
-
-Shop ${name} at Namarq. A ${vibe} ${gender} fragrance. Free shipping on orders over 1500 LE.
+Shop ${name} at Namarq. A refined ${gender} fragrance. Free shipping on orders over 1500 LE.
 
 ## Data Confidence
 
@@ -134,10 +140,10 @@ ${confidence}
 STRICT: NO EXTRA TEXT
 `;
 
-    let seoData = await ask("google/gemini-2.0-flash-exp:free", seoPrompt);
-    let output = seoData?.choices?.[0]?.message?.content;
+    const seo = await ask("google/gemini-2.0-flash-exp:free", seoPrompt);
+    let output = seo?.choices?.[0]?.message?.content;
 
-    // 🛟 fallback
+    // ---------- FALLBACK ----------
     if (!output) {
       output = `
 ## Short description
@@ -146,7 +152,7 @@ New · SEO Recommended
 
 150/200 (Recommended)
 
-A ${vibe} ${gender} fragrance featuring ${top}, ${heart}, and ${base}. A refined scent from Namarq Egypt.
+An elegant ${gender} fragrance opening with ${top}, evolving into ${heart}, and settling into ${base}.
 
 ## SEO settings
 
@@ -157,7 +163,7 @@ A ${vibe} ${gender} fragrance featuring ${top}, ${heart}, and ${base}. A refined
 ${name} Perfume | Namarq Perfumes Egypt
 
 **Description**
-Shop ${name} at Namarq. A ${vibe} ${gender} fragrance. Free shipping on orders over 1500 LE.
+Shop ${name} at Namarq. A refined ${gender} fragrance. Free shipping on orders over 1500 LE.
 
 ## Data Confidence
 
