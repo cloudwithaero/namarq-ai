@@ -23,7 +23,7 @@ body {
   font-family: 'EB Garamond', serif;
 }
 
-/* container */
+/* layout */
 .container {
   max-width: 900px;
   margin: auto;
@@ -86,17 +86,44 @@ button:hover {
   background: var(--olive);
 }
 
-/* result */
+/* result container */
 .result {
-  margin-top: 40px;
-  padding: 30px;
+  margin-top: 50px;
+  padding: 40px;
   border: 1px solid var(--beige);
   background: #fff;
-  white-space: pre-wrap;
-  line-height: 1.8;
+  line-height: 1.9;
 }
 
-/* copy */
+/* headings */
+.result h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  margin-bottom: 10px;
+}
+
+.result h3 {
+  font-family: 'Montserrat';
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--olive);
+  margin-top: 25px;
+}
+
+/* highlight paragraph */
+.result p {
+  margin: 10px 0;
+}
+
+.result p:first-of-type {
+  font-style: italic;
+  font-size: 18px;
+  border-left: 2px solid var(--amber);
+  padding-left: 15px;
+}
+
+/* copy button */
 .copy {
   margin-top: 15px;
   background: transparent;
@@ -123,10 +150,10 @@ button:hover {
       <input id="top" placeholder="Top Notes">
       <input id="heart" placeholder="Heart Notes">
       <input id="base" placeholder="Base Notes">
-      <input id="vibe" placeholder="Vibe">
+      <input id="vibe" placeholder="Vibe / Occasion">
     </div>
 
-    <button onclick="generate()">GENERATE</button>
+    <button onclick="generate()" id="btn">GENERATE</button>
 
     <div id="result" class="result"></div>
 
@@ -138,6 +165,11 @@ button:hover {
 
 <script>
 async function generate() {
+
+  const btn = document.getElementById("btn");
+  btn.innerText = "Generating...";
+  btn.disabled = true;
+
   const data = {
     name: name.value,
     gender: gender.value,
@@ -147,16 +179,46 @@ async function generate() {
     vibe: vibe.value
   };
 
-  const res = await fetch("/api/generate", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(data)
-  });
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(data)
+    });
 
-  const json = await res.json();
-  result.innerText = json.output;
+    const json = await res.json();
+
+    // 🔥 format output
+    result.innerHTML = formatOutput(json.output);
+
+  } catch {
+    result.innerHTML = "<p>❌ Error generating content</p>";
+  }
+
+  btn.innerText = "GENERATE";
+  btn.disabled = false;
 }
 
+
+// ✨ format function (luxury rendering)
+function formatOutput(text) {
+
+  if (!text) return "";
+
+  let html = text;
+
+  html = html.replace(/## (.*)/g, '<h2>$1</h2>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<h3>$1</h3>');
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
+
+  html = "<p>" + html + "</p>";
+
+  return html;
+}
+
+
+// copy
 function copyText() {
   navigator.clipboard.writeText(result.innerText);
   alert("Copied");
