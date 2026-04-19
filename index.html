@@ -3,333 +3,471 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Namarq AI — Perfume SEO Generator</title>
-<meta name="description" content="AI-powered SEO copy generator for Namarq Perfumes.">
-
+<title>Namarq AI — Perfume Intelligence</title>
+<meta name="description" content="AI-powered SEO intelligence for Namarq Perfumes. Internal tool.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
 
 <style>
-/* ── Reset ───────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* ── Design Tokens ───────────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════ */
 :root {
-  --ivory:       #FAF8F4;
-  --ivory-dark:  #F2EDE5;
-  --white:       #FFFFFF;
-  --beige:       #DDD5C8;
-  --beige-light: #EDE8E1;
-  --brown:       #2C1E14;
-  --brown-mid:   #4A3728;
-  --olive:       #6B705C;
-  --amber:       #A47148;
-  --amber-light: #C4956A;
-  --gold:        #C9A96E;
-  --gold-light:  #E8D5A3;
-  --muted:       #8A7E74;
+  --black:    #0A0A08;
+  --black2:   #111110;
+  --black3:   #1A1A18;
+  --black4:   #252522;
+  --grey1:    #2E2E2B;
+  --grey2:    #3D3D3A;
+  --grey3:    #6B6B66;
+  --grey4:    #9A9A94;
+  --off:      #C8C8C0;
+  --cream:    #E8E5DC;
+  --gold:     #C9A84C;
+  --gold2:    #E6C97A;
+  --gold3:    #F5E4A8;
+  --amber:    #B87333;
+  --red:      #8B2020;
+  --green:    #1A4A1A;
+  --green2:   #2D7A2D;
 
-  --font-serif:   'Cormorant Garamond', Georgia, serif;
-  --font-sans:    'Montserrat', system-ui, sans-serif;
+  --display:  'Bebas Neue', sans-serif;
+  --serif:    'DM Serif Display', Georgia, serif;
+  --body:     'Barlow', system-ui, sans-serif;
+  --mono:     'DM Mono', monospace;
 
-  --radius:       2px;
-  --transition:   all 0.25s ease;
-  --shadow-sm:    0 1px 4px rgba(44,30,20,0.06);
-  --shadow-md:    0 4px 24px rgba(44,30,20,0.10);
-  --shadow-lg:    0 12px 48px rgba(44,30,20,0.14);
+  --ease:     cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Base ────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   RESET + BASE
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--ivory);
-  color: var(--brown);
-  font-family: var(--font-serif);
-  font-size: 17px;
-  line-height: 1.7;
+  background: var(--black);
+  color: var(--cream);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* ── Layout ──────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   NOISE TEXTURE OVERLAY
+═══════════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
 .page {
-  max-width: 820px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 64px 24px 120px;
+  padding: 0 24px 120px;
 }
 
-/* ── Header ──────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════ */
 .header {
-  text-align: center;
-  margin-bottom: 56px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  border-bottom: 1px solid var(--grey1);
+  padding: 40px 0 20px;
+  margin-bottom: 72px;
+  gap: 24px;
 }
+
+.header__left { display: flex; flex-direction: column; gap: 2px; }
 
 .header__wordmark {
-  font-family: var(--font-serif);
-  font-weight: 300;
-  font-size: clamp(36px, 8vw, 64px);
-  letter-spacing: 0.55em;
-  color: var(--brown);
+  font-family: var(--display);
+  font-size: clamp(56px, 10vw, 96px);
+  letter-spacing: 0.08em;
+  color: var(--cream);
+  line-height: 0.9;
   text-transform: uppercase;
-  line-height: 1;
+}
+
+.header__wordmark span {
+  color: var(--gold);
 }
 
 .header__sub {
-  font-family: var(--font-sans);
+  font-family: var(--body);
   font-weight: 300;
-  font-size: 9px;
-  letter-spacing: 0.55em;
-  color: var(--olive);
-  text-transform: uppercase;
-  margin-top: 10px;
-  display: block;
-}
-
-.header__rule {
-  width: 1px;
-  height: 40px;
-  background: var(--beige);
-  margin: 20px auto 0;
-}
-
-/* ── Card ────────────────────────────────────────────────────── */
-.card {
-  background: var(--white);
-  border: 1px solid var(--beige);
-  padding: 48px 48px 56px;
-  box-shadow: var(--shadow-sm);
-}
-
-@media (max-width: 600px) {
-  .card { padding: 28px 20px 36px; }
-}
-
-/* ── Form ────────────────────────────────────────────────────── */
-.form__label {
-  display: block;
-  font-family: var(--font-sans);
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: var(--olive);
-  margin-bottom: 10px;
-}
-
-.form__input {
-  display: block;
-  width: 100%;
-  padding: 14px 16px;
-  border: 1px solid var(--beige);
-  background: var(--ivory);
-  font-family: var(--font-serif);
-  font-size: 17px;
-  color: var(--brown);
-  outline: none;
-  transition: var(--transition);
-  border-radius: var(--radius);
-  appearance: none;
-}
-
-.form__input::placeholder { color: var(--muted); font-style: italic; }
-.form__input:focus { border-color: var(--amber); background: var(--white); }
-
-.form__btn {
-  display: block;
-  width: 100%;
-  margin-top: 16px;
-  padding: 15px 24px;
-  border: none;
-  background: var(--brown);
-  color: var(--ivory);
-  font-family: var(--font-sans);
   font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.45em;
+  letter-spacing: 0.5em;
+  color: var(--grey3);
   text-transform: uppercase;
+  margin-top: 8px;
+}
+
+.header__badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  border: 1px solid var(--grey1);
+  padding: 6px 12px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 12px;
+}
+
+/* ═══════════════════════════════════════════
+   INPUT ZONE
+═══════════════════════════════════════════ */
+.input-zone {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0;
+  border: 1px solid var(--grey2);
+  margin-bottom: 60px;
+  position: relative;
+}
+
+.input-zone::before {
+  content: 'FRAGRANCE';
+  position: absolute;
+  top: -1px;
+  left: 20px;
+  transform: translateY(-50%);
+  background: var(--black);
+  padding: 0 8px;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.35em;
+  color: var(--gold);
+}
+
+.input-zone input {
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 22px 24px;
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--cream);
+  width: 100%;
+  caret-color: var(--gold);
+}
+
+.input-zone input::placeholder {
+  color: var(--grey2);
+  font-style: italic;
+}
+
+.input-zone input:focus {
+  background: var(--black2);
+}
+
+.generate-btn {
+  background: var(--gold);
+  border: none;
+  color: var(--black);
+  font-family: var(--display);
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  padding: 0 32px;
   cursor: pointer;
-  transition: var(--transition);
-  border-radius: var(--radius);
+  transition: background 0.2s var(--ease), color 0.2s;
+  white-space: nowrap;
+  min-width: 140px;
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: var(--gold2);
+}
+
+.generate-btn:disabled {
+  background: var(--grey1);
+  color: var(--grey3);
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════
+   ERROR
+═══════════════════════════════════════════ */
+.error-bar {
+  display: none;
+  background: var(--red);
+  border-left: 3px solid #FF4444;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: #FF9999;
+}
+.error-bar.is-visible { display: block; }
+
+/* ═══════════════════════════════════════════
+   LOADING
+═══════════════════════════════════════════ */
+.loading-panel {
+  display: none;
+  padding: 64px 0;
+  text-align: center;
+}
+.loading-panel.is-active { display: block; }
+
+.loading-bar-wrap {
+  width: 240px;
+  height: 1px;
+  background: var(--grey1);
+  margin: 0 auto 28px;
   position: relative;
   overflow: hidden;
 }
 
-.form__btn:hover:not(:disabled) { background: var(--brown-mid); }
-.form__btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-/* ── Loading state ───────────────────────────────────────────── */
-.loading {
-  display: none;
-  text-align: center;
-  padding: 48px 0 24px;
-  color: var(--muted);
+.loading-bar {
+  position: absolute;
+  top: 0; left: -60%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: scan 1.8s ease-in-out infinite;
 }
 
-.loading.is-active { display: block; }
+@keyframes scan {
+  0%   { left: -60%; }
+  100% { left: 100%; }
+}
 
-.loading__dots {
+.loading-steps {
   display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
 }
 
-.loading__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--amber);
-  animation: pulse 1.4s ease-in-out infinite;
-}
-
-.loading__dot:nth-child(2) { animation-delay: 0.2s; }
-.loading__dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes pulse {
-  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1); }
-}
-
-.loading__text {
-  font-family: var(--font-sans);
+.loading-step {
+  font-family: var(--mono);
   font-size: 9px;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
+  color: var(--grey3);
+  opacity: 0;
+  transition: opacity 0.4s;
 }
 
-/* ── Result ──────────────────────────────────────────────────── */
+.loading-step.is-active {
+  color: var(--gold);
+  opacity: 1;
+}
+
+.loading-step.is-done {
+  color: var(--grey2);
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════
+   RESULT
+═══════════════════════════════════════════ */
 .result {
   display: none;
-  margin-top: 48px;
-  animation: fadeUp 0.45s ease forwards;
+  animation: rise 0.5s var(--ease) forwards;
 }
-
 .result.is-visible { display: block; }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Result header bar ───────────────────────────────────────── */
-.result__header {
+/* ── Identity Row ────────────────────────────── */
+.identity {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 28px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--beige-light);
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--grey1);
+  margin-bottom: 40px;
   flex-wrap: wrap;
 }
 
-.result__name {
-  font-family: var(--font-serif);
-  font-size: 26px;
-  font-weight: 400;
-  line-height: 1.2;
-  color: var(--brown);
-}
-
-.result__house {
-  font-family: var(--font-sans);
-  font-size: 9px;
-  letter-spacing: 0.3em;
-  color: var(--olive);
+.identity__name {
+  font-family: var(--display);
+  font-size: clamp(36px, 6vw, 64px);
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  color: var(--cream);
   text-transform: uppercase;
-  margin-top: 4px;
 }
 
-/* ── Confidence badge ────────────────────────────────────────── */
-.badge {
-  flex-shrink: 0;
+.identity__house {
+  font-family: var(--body);
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 0.4em;
+  color: var(--grey3);
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+.identity__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+/* ── Confidence Badge ────────────────────────── */
+.conf-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 30px;
-  font-family: var(--font-sans);
+  gap: 8px;
+  padding: 8px 16px;
+  font-family: var(--mono);
   font-size: 9px;
-  font-weight: 500;
   letter-spacing: 0.25em;
   text-transform: uppercase;
+  border: 1px solid;
 }
 
-.badge--high   { background: #EBF5EC; color: #2D6A30; border: 1px solid #A8D5AB; }
-.badge--medium { background: #FEF9EC; color: #8A6520; border: 1px solid #E8D08A; }
-.badge--low    { background: #FEF0EE; color: #8A2E2A; border: 1px solid #E8A8A3; }
+.conf-badge--high   { border-color: var(--green2); color: #6DCC6D; background: rgba(45,122,45,0.12); }
+.conf-badge--medium { border-color: var(--gold);   color: var(--gold2); background: rgba(201,168,76,0.10); }
+.conf-badge--low    { border-color: var(--red);    color: #FF8080; background: rgba(139,32,32,0.12); }
 
-.badge__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+.conf-badge__dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  animation: blink 2s ease-in-out infinite;
+}
+.conf-badge--high   .conf-badge__dot { background: #6DCC6D; }
+.conf-badge--medium .conf-badge__dot { background: var(--gold2); }
+.conf-badge--low    .conf-badge__dot { background: #FF8080; }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
-.badge--high   .badge__dot { background: #2D6A30; }
-.badge--medium .badge__dot { background: #8A6520; }
-.badge--low    .badge__dot { background: #8A2E2A; }
-
-/* ── Profile grid ────────────────────────────────────────────── */
-.profile {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1px;
-  background: var(--beige-light);
-  border: 1px solid var(--beige-light);
-  margin-bottom: 36px;
-}
-
-.profile__cell {
-  background: var(--ivory);
-  padding: 16px 18px;
-}
-
-.profile__key {
-  font-family: var(--font-sans);
+.kb-tag {
+  font-family: var(--mono);
   font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  color: var(--olive);
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  border: 1px solid var(--grey1);
+  padding: 4px 10px;
   text-transform: uppercase;
-  margin-bottom: 5px;
 }
 
-.profile__val {
-  font-family: var(--font-serif);
-  font-size: 14px;
-  color: var(--brown);
+/* ── Profile Grid ───────────────────────────── */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--grey1);
+  border: 1px solid var(--grey1);
+  margin-bottom: 48px;
+}
+
+@media (max-width: 700px) {
+  .profile-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 400px) {
+  .profile-grid { grid-template-columns: 1fr; }
+}
+
+.profile-cell {
+  background: var(--black2);
+  padding: 18px 20px;
+  transition: background 0.2s;
+}
+
+.profile-cell:hover { background: var(--black3); }
+
+.profile-cell--wide {
+  grid-column: span 2;
+}
+
+.profile-key {
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.35em;
+  color: var(--grey3);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.profile-val {
+  font-family: var(--body);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--off);
   line-height: 1.5;
 }
 
-/* ── SEO Output ──────────────────────────────────────────────── */
-.seo-output {
-  background: var(--white);
-  border: 1px solid var(--beige);
-  padding: 36px 40px;
-  position: relative;
+.profile-val--notes {
+  font-family: var(--serif);
+  font-size: 14px;
+  color: var(--cream);
+  font-style: italic;
 }
 
-@media (max-width: 600px) {
-  .seo-output { padding: 24px 20px; }
+/* ── Accords pills ──────────────────────────── */
+.accord-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
 }
 
-.seo-output__toolbar {
+.accord-pill {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid var(--grey2);
+  color: var(--gold);
+  background: rgba(201,168,76,0.06);
+}
+
+/* ── SEO Panel ──────────────────────────────── */
+.seo-panel {
+  border: 1px solid var(--grey1);
+  background: var(--black2);
+}
+
+.seo-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--beige-light);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--grey1);
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.seo-output__label {
-  font-family: var(--font-sans);
+.seo-panel__title {
+  font-family: var(--mono);
   font-size: 9px;
-  font-weight: 500;
   letter-spacing: 0.4em;
-  color: var(--olive);
+  color: var(--grey3);
   text-transform: uppercase;
+}
+
+.seo-panel__actions {
+  display: flex;
+  gap: 8px;
 }
 
 .copy-btn {
@@ -337,103 +475,190 @@ body {
   align-items: center;
   gap: 7px;
   padding: 7px 16px;
-  border: 1px solid var(--beige);
+  border: 1px solid var(--grey2);
   background: transparent;
-  color: var(--brown-mid);
-  font-family: var(--font-sans);
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: var(--transition);
-  border-radius: var(--radius);
-}
-
-.copy-btn:hover { border-color: var(--amber); color: var(--amber); }
-.copy-btn.copied { border-color: #2D6A30; color: #2D6A30; }
-
-.copy-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
-
-/* ── Rendered markdown ───────────────────────────────────────── */
-.seo-body { line-height: 1.85; }
-
-.seo-body .seo-h2 {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: 13px;
+  color: var(--off);
+  font-family: var(--mono);
+  font-size: 8px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--amber);
-  margin: 28px 0 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--beige-light);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.seo-body .seo-h2:first-child { margin-top: 0; }
-
-.seo-body .seo-p {
-  font-family: var(--font-serif);
-  font-size: 16px;
-  color: var(--brown);
-  margin-bottom: 10px;
+.copy-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
-.seo-body .seo-p:first-of-type {
+.copy-btn.copied {
+  border-color: var(--green2);
+  color: #6DCC6D;
+}
+
+.copy-btn svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+.seo-body {
+  padding: 32px 28px;
+}
+
+/* ── SEO Markdown Styles ────────────────────── */
+.seo-section {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--grey1);
+}
+.seo-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.seo-section-title {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.seo-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--grey1);
+}
+
+.seo-description {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.8;
+  color: var(--cream);
   font-style: italic;
   border-left: 2px solid var(--gold);
-  padding-left: 16px;
-  margin-left: 0;
-  color: var(--brown-mid);
+  padding-left: 20px;
 }
 
-.seo-body .seo-strong {
-  font-family: var(--font-sans);
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--olive);
-  display: block;
-  margin: 16px 0 4px;
+.seo-meta-value {
+  font-family: var(--body);
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--off);
+  line-height: 1.6;
 }
 
-.seo-body .seo-code {
-  font-family: 'Courier New', monospace;
+.seo-url {
+  font-family: var(--mono);
   font-size: 13px;
-  background: var(--ivory-dark);
-  padding: 8px 12px;
-  display: block;
-  color: var(--brown-mid);
-  border-left: 2px solid var(--beige);
-  margin-bottom: 8px;
+  color: var(--gold2);
+  background: var(--black3);
+  padding: 12px 16px;
+  border-left: 2px solid var(--grey2);
   word-break: break-all;
 }
 
-/* ── Error state ─────────────────────────────────────────────── */
-.error-msg {
-  display: none;
-  margin-top: 20px;
-  padding: 14px 18px;
-  background: #FEF0EE;
-  border-left: 3px solid #C0392B;
-  font-family: var(--font-sans);
-  font-size: 11px;
-  color: #8A2E2A;
-  letter-spacing: 0.02em;
+.seo-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.error-msg.is-visible { display: block; }
-
-/* ── Footer ──────────────────────────────────────────────────── */
-.footer {
-  text-align: center;
-  margin-top: 80px;
-  color: var(--muted);
-  font-family: var(--font-sans);
+.seo-tag {
+  font-family: var(--mono);
   font-size: 9px;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.15em;
+  padding: 5px 12px;
+  border: 1px solid var(--grey2);
+  color: var(--grey4);
+  text-transform: lowercase;
+  transition: all 0.15s;
+}
+
+.seo-tag:hover {
+  border-color: var(--grey3);
+  color: var(--off);
+}
+
+/* ── Vote Score Bar ─────────────────────────── */
+.vote-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--grey1);
+}
+
+.vote-bar-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.25em;
+  color: var(--grey3);
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vote-bar-track {
+  flex: 1;
+  height: 2px;
+  background: var(--grey1);
+  position: relative;
+  overflow: hidden;
+}
+
+.vote-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), var(--gold), var(--gold2));
+  transition: width 0.8s var(--ease);
+}
+
+.vote-bar-score {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+/* ── Footer ─────────────────────────────────── */
+.footer {
+  margin-top: 80px;
+  padding-top: 20px;
+  border-top: 1px solid var(--grey1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer__left {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  color: var(--grey2);
+  text-transform: uppercase;
+}
+
+.footer__right {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  color: var(--grey2);
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .header { grid-template-columns: 1fr; }
+  .input-zone { grid-template-columns: 1fr; }
+  .generate-btn { padding: 16px; min-width: unset; }
+  .seo-body { padding: 24px 20px; }
+  .identity__meta { align-items: flex-start; }
 }
 </style>
 </head>
@@ -441,323 +666,392 @@ body {
 <body>
 <div class="page">
 
-  <!-- Header -->
+  <!-- ── HEADER ─────────────────────────────── -->
   <header class="header">
-    <h1 class="header__wordmark">Namarq</h1>
-    <span class="header__sub">Perfume House · AI Tools</span>
-    <div class="header__rule"></div>
+    <div class="header__left">
+      <div class="header__wordmark">NAM<span>ARQ</span></div>
+      <div class="header__sub">Perfume Intelligence · Internal Tool</div>
+    </div>
+    <div class="header__badge">AI v3.0</div>
   </header>
 
-  <!-- Input Card -->
-  <div class="card">
-
-    <label class="form__label" for="nameInput">Fragrance Name</label>
+  <!-- ── INPUT ZONE ─────────────────────────── -->
+  <div class="input-zone">
     <input
       id="nameInput"
-      class="form__input"
       type="text"
-      placeholder="e.g. Dior Sauvage, Black Orchid, Aventus"
+      placeholder="Enter fragrance name…"
       autocomplete="off"
       spellcheck="false"
     >
-
-    <button class="form__btn" id="generateBtn" onclick="generate()">
-      Generate SEO Content
+    <button class="generate-btn" id="generateBtn" onclick="generate()">
+      GENERATE
     </button>
+  </div>
 
-    <!-- Error -->
-    <div class="error-msg" id="errorMsg"></div>
+  <!-- ── ERROR ──────────────────────────────── -->
+  <div class="error-bar" id="errorBar"></div>
 
-    <!-- Loading -->
-    <div class="loading" id="loading">
-      <div class="loading__dots">
-        <div class="loading__dot"></div>
-        <div class="loading__dot"></div>
-        <div class="loading__dot"></div>
+  <!-- ── LOADING ────────────────────────────── -->
+  <div class="loading-panel" id="loadingPanel">
+    <div class="loading-bar-wrap">
+      <div class="loading-bar"></div>
+    </div>
+    <div class="loading-steps">
+      <div class="loading-step" id="step0">NORMALIZING INPUT</div>
+      <div class="loading-step" id="step1">QUERYING 3 AI MODELS IN PARALLEL</div>
+      <div class="loading-step" id="step2">SEMANTIC VOTE ANALYSIS</div>
+      <div class="loading-step" id="step3">VERIFICATION PASS</div>
+      <div class="loading-step" id="step4">GENERATING LUXURY SEO COPY</div>
+    </div>
+  </div>
+
+  <!-- ── RESULT ─────────────────────────────── -->
+  <div class="result" id="result">
+
+    <!-- Identity -->
+    <div class="identity">
+      <div>
+        <div class="identity__name" id="rName"></div>
+        <div class="identity__house" id="rHouse"></div>
       </div>
-      <div class="loading__text">Analyzing fragrance profile</div>
+      <div class="identity__meta">
+        <div class="conf-badge" id="confBadge">
+          <div class="conf-badge__dot"></div>
+          <span id="confLabel"></span>
+        </div>
+        <div class="kb-tag" id="kbTag" style="display:none">KB VERIFIED</div>
+      </div>
     </div>
 
-    <!-- Result -->
-    <div class="result" id="result">
+    <!-- Profile Grid -->
+    <div class="profile-grid" id="profileGrid"></div>
 
-      <!-- Name + Confidence -->
-      <div class="result__header">
-        <div>
-          <div class="result__name" id="resultName"></div>
-          <div class="result__house" id="resultHouse"></div>
-        </div>
-        <div class="badge" id="confidenceBadge">
-          <div class="badge__dot"></div>
-          <span id="confidenceLabel"></span>
-        </div>
-      </div>
-
-      <!-- Olfactory Profile Grid -->
-      <div class="profile" id="profileGrid"></div>
-
-      <!-- SEO Output -->
-      <div class="seo-output">
-        <div class="seo-output__toolbar">
-          <span class="seo-output__label">SEO Output</span>
+    <!-- SEO Panel -->
+    <div class="seo-panel">
+      <div class="seo-panel__header">
+        <span class="seo-panel__title">SEO Output</span>
+        <div class="seo-panel__actions">
           <button class="copy-btn" id="copyBtn" onclick="copyOutput()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="9" y="9" width="13" height="13" rx="1"/>
               <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
             </svg>
-            Copy All
+            Copy
           </button>
         </div>
-        <div class="seo-body" id="seoBody"></div>
       </div>
 
-    </div><!-- /result -->
+      <div class="seo-body" id="seoBody"></div>
 
-  </div><!-- /card -->
+      <div class="vote-bar-wrap">
+        <span class="vote-bar-label">Accuracy Score</span>
+        <div class="vote-bar-track">
+          <div class="vote-bar-fill" id="voteBarFill" style="width:0%"></div>
+        </div>
+        <span class="vote-bar-score" id="voteScore"></span>
+      </div>
+    </div>
 
-  <footer class="footer">Namarq · Internal Tool · Not for distribution</footer>
+  </div><!-- /result -->
+
+  <!-- ── FOOTER ─────────────────────────────── -->
+  <footer class="footer">
+    <span class="footer__left">Namarq Perfume House · Egypt</span>
+    <span class="footer__right">Internal · Not for distribution</span>
+  </footer>
+
 </div><!-- /page -->
 
 <script>
-// ── State ──────────────────────────────────────────────────────────────────
-let lastRawSEO = ""; // Stores plain text for clipboard
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let lastSEORaw = "";
+let stepTimer  = null;
 
-// ── Generate ───────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════
+// GENERATE
+// ══════════════════════════════════════════════
 async function generate() {
-  const nameInput  = document.getElementById("nameInput");
-  const btn        = document.getElementById("generateBtn");
-  const loading    = document.getElementById("loading");
-  const result     = document.getElementById("result");
-  const errorMsg   = document.getElementById("errorMsg");
+  const input = document.getElementById("nameInput");
+  const btn   = document.getElementById("generateBtn");
+  const name  = input.value.trim();
 
-  const name = nameInput.value.trim();
+  if (!name) { showError("Please enter a fragrance name."); input.focus(); return; }
 
-  // Validation
-  if (!name) {
-    showError("Please enter a fragrance name.");
-    nameInput.focus();
-    return;
-  }
-
-  // UI → loading state
   hideError();
-  result.classList.remove("is-visible");
-  loading.classList.add("is-active");
+  hideResult();
+  showLoading();
   btn.disabled = true;
-  btn.textContent = "Generating…";
+  btn.textContent = "ANALYZING…";
 
   try {
-    const response = await fetch("/api/generate", {
+    const res = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || `Server error ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) throw new Error(data.error);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
 
     renderResult(data);
 
   } catch (err) {
+    hideLoading();
     showError(err.message || "Something went wrong. Please try again.");
   } finally {
-    loading.classList.remove("is-active");
     btn.disabled = false;
-    btn.textContent = "Generate SEO Content";
+    btn.textContent = "GENERATE";
   }
 }
 
-// ── Render result ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════
+// RENDER RESULT
+// ══════════════════════════════════════════════
 function renderResult(data) {
-  const result = document.getElementById("result");
+  // Identity
+  document.getElementById("rName").textContent  = data.name  || "—";
+  document.getElementById("rHouse").textContent = data.house || "";
 
-  // Name + house
-  document.getElementById("resultName").textContent  = data.name || "—";
-  document.getElementById("resultHouse").textContent = data.house || "";
+  // Confidence
+  const badge  = document.getElementById("confBadge");
+  const label  = document.getElementById("confLabel");
+  const conf   = (data.confidence || "low").toLowerCase();
+  badge.className = `conf-badge conf-badge--${conf}`;
+  label.textContent = `${data.confidence || "Low"} Confidence`;
 
-  // Confidence badge
-  const badge = document.getElementById("confidenceBadge");
-  const label = document.getElementById("confidenceLabel");
-  const conf  = (data.confidence || "low").toLowerCase();
-  badge.className = `badge badge--${conf}`;
-  label.textContent = data.confidence || "Low";
+  // KB tag
+  const kbTag = document.getElementById("kbTag");
+  kbTag.style.display = data.kbVerified ? "inline-flex" : "none";
 
   // Profile grid
-  const grid = document.getElementById("profileGrid");
-  const p    = data.profile || {};
-  const fields = [
-    ["Top Notes",      p.top],
-    ["Heart Notes",    p.heart],
-    ["Base Notes",     p.base],
-    ["Gender",         p.gender],
-    ["Concentration",  p.concentration],
-    ["Season",         p.season],
-    ["Occasion",       p.occasion],
-    ["Longevity",      p.longevity],
-    ["Sillage",        p.sillage],
-    ["Character",      p.vibe],
-  ];
+  renderProfileGrid(data.profile || {});
 
-  grid.innerHTML = fields.map(([key, val]) => `
-    <div class="profile__cell">
-      <div class="profile__key">${key}</div>
-      <div class="profile__val">${val || "—"}</div>
-    </div>
-  `).join("");
+  // SEO
+  lastSEORaw = data.seo || "";
+  document.getElementById("seoBody").innerHTML = parseSEO(lastSEORaw);
 
-  // SEO body
-  lastRawSEO = data.seo || "";
-  document.getElementById("seoBody").innerHTML = renderMarkdown(lastRawSEO);
+  // Vote bar
+  const pct = data.voteMax > 0 ? Math.round((data.voteScore / data.voteMax) * 100) : 0;
+  setTimeout(() => {
+    document.getElementById("voteBarFill").style.width = pct + "%";
+  }, 80);
+  document.getElementById("voteScore").textContent = `${data.voteScore}/${data.voteMax} votes`;
 
   // Reset copy button
-  const copyBtn = document.getElementById("copyBtn");
-  copyBtn.classList.remove("copied");
-  copyBtn.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <rect x="9" y="9" width="13" height="13" rx="2"/>
-      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-    </svg>
-    Copy All`;
+  const cb = document.getElementById("copyBtn");
+  cb.className = "copy-btn";
+  cb.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="9" y="9" width="13" height="13" rx="1"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy`;
 
-  // Show result
-  result.classList.add("is-visible");
-  result.scrollIntoView({ behavior: "smooth", block: "start" });
+  hideLoading();
+  document.getElementById("result").classList.add("is-visible");
+  document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// ── Markdown renderer ──────────────────────────────────────────────────────
-// Custom renderer that produces our design-system classes.
-// Handles: ## headings, **bold**, `/path/url` code, paragraphs.
-// Processes line-by-line to avoid the broken regex replacement chain.
-function renderMarkdown(text) {
+// ── Profile Grid ─────────────────────────────
+function renderProfileGrid(p) {
+  const grid = document.getElementById("profileGrid");
+
+  const accords = (p.accords && p.accords !== "—")
+    ? p.accords.split(",").map(a =>
+        `<span class="accord-pill">${escHtml(a.trim())}</span>`
+      ).join("")
+    : "—";
+
+  const cells = [
+    { key: "Top Notes",     val: p.top,     wide: true,  notes: true },
+    { key: "Heart Notes",   val: p.heart,   wide: true,  notes: true },
+    { key: "Base Notes",    val: p.base,    wide: true,  notes: true },
+    { key: "Accords",       val: null,      wide: true,  raw: `<div class="accord-list">${accords}</div>` },
+    { key: "Gender",        val: p.gender,  wide: false },
+    { key: "Concentration", val: p.concentration, wide: false },
+    { key: "Season",        val: p.season,  wide: false },
+    { key: "Occasion",      val: p.occasion,wide: false },
+    { key: "Longevity",     val: p.longevity,wide: false },
+    { key: "Sillage",       val: p.sillage, wide: false },
+    { key: "Character",     val: p.vibe,    wide: true  },
+  ];
+
+  grid.innerHTML = cells.map(c => `
+    <div class="profile-cell${c.wide ? " profile-cell--wide" : ""}">
+      <div class="profile-key">${c.key}</div>
+      <div class="profile-val${c.notes ? " profile-val--notes" : ""}">
+        ${c.raw !== undefined ? c.raw : escHtml(c.val || "—")}
+      </div>
+    </div>
+  `).join("");
+}
+
+// ══════════════════════════════════════════════
+// SEO MARKDOWN PARSER
+// ══════════════════════════════════════════════
+function parseSEO(text) {
   if (!text) return "";
 
-  const lines  = text.split("\n");
-  const output = [];
-  let   inParagraph = false;
-  let   firstParagraph = true;
+  const lines = text.split("\n");
+  const sections = [];
+  let current = null;
+  let bodyLines = [];
 
-  function closeParagraph() {
-    if (inParagraph) { output.push("</p>"); inParagraph = false; }
+  function flush() {
+    if (!current) return;
+    sections.push({ title: current, body: bodyLines.join("\n").trim() });
+    bodyLines = [];
   }
 
-  for (const rawLine of lines) {
-    const line = rawLine.trimEnd();
-
-    // H2 heading: ## Section Title
+  for (const raw of lines) {
+    const line = raw.trimEnd();
     if (/^## /.test(line)) {
-      closeParagraph();
-      const heading = line.replace(/^## /, "").trim();
-      output.push(`<div class="seo-h2">${escapeHTML(heading)}</div>`);
-      if (heading.toLowerCase().includes("short description")) firstParagraph = true;
-      continue;
+      flush();
+      current = line.replace(/^## /, "").trim();
+    } else if (current !== null) {
+      bodyLines.push(line);
     }
-
-    // Bold label: **Label**  (standalone line)
-    if (/^\*\*[^*]+\*\*$/.test(line.trim())) {
-      closeParagraph();
-      const label = line.trim().replace(/^\*\*|\*\*$/g, "");
-      output.push(`<span class="seo-strong">${escapeHTML(label)}</span>`);
-      continue;
-    }
-
-    // Code / URL line: starts with / or http or ../
-    if (/^\s*(\/|https?:\/\/|\.\.\/)\S/.test(line)) {
-      closeParagraph();
-      output.push(`<code class="seo-code">${escapeHTML(line.trim())}</code>`);
-      continue;
-    }
-
-    // Blank line → close current paragraph
-    if (line.trim() === "") {
-      closeParagraph();
-      continue;
-    }
-
-    // Regular text → paragraph
-    if (!inParagraph) {
-      const cls = firstParagraph ? "" : ""; // first-of-type handles the italic style
-      output.push(`<p class="seo-p">`);
-      inParagraph = true;
-      firstParagraph = false;
-    } else {
-      output.push(" "); // inline space between continued lines
-    }
-
-    // Inline **bold** within text
-    const inlined = escapeHTML(line.trim()).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    output.push(inlined);
   }
+  flush();
 
-  closeParagraph();
-  return output.join("");
+  return sections.map(s => renderSEOSection(s.title, s.body)).join("");
 }
 
-// ── Copy to clipboard ──────────────────────────────────────────────────────
+function renderSEOSection(title, body) {
+  const t = title.toLowerCase();
+  let content = "";
+
+  if (t.includes("short description")) {
+    // Italic serif block
+    content = `<div class="seo-description">${escHtml(body)}</div>`;
+
+  } else if (t.includes("meta title")) {
+    content = `<div class="seo-meta-value">${escHtml(body)}</div>`;
+
+  } else if (t.includes("meta description")) {
+    content = `<div class="seo-meta-value">${escHtml(body)}</div>`;
+
+  } else if (t.includes("product url")) {
+    // Extract the /product/... line
+    const urlLine = body.split("\n").find(l => l.trim().startsWith("/")) || body;
+    content = `<div class="seo-url">${escHtml(urlLine.trim())}</div>`;
+
+  } else if (t.includes("tag")) {
+    // Render as pills
+    const tags = body.split(",").map(t2 => t2.trim()).filter(Boolean);
+    content = `<div class="seo-tags">${
+      tags.map(tag => `<span class="seo-tag">${escHtml(tag)}</span>`).join("")
+    }</div>`;
+
+  } else {
+    content = `<div class="seo-meta-value">${escHtml(body)}</div>`;
+  }
+
+  return `
+    <div class="seo-section">
+      <div class="seo-section-title">${escHtml(title)}</div>
+      ${content}
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════
+// COPY
+// ══════════════════════════════════════════════
 async function copyOutput() {
-  if (!lastRawSEO) return;
-
+  if (!lastSEORaw) return;
   const btn = document.getElementById("copyBtn");
-
   try {
-    await navigator.clipboard.writeText(lastRawSEO);
+    await navigator.clipboard.writeText(lastSEORaw);
     btn.classList.add("copied");
-    btn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-      Copied`;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg>Copied`;
     setTimeout(() => {
       btn.classList.remove("copied");
-      btn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2"/>
-          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-        </svg>
-        Copy All`;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="9" y="9" width="13" height="13" rx="1"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy`;
     }, 2500);
   } catch {
-    // Fallback for browsers that block clipboard
     const ta = document.createElement("textarea");
-    ta.value = lastRawSEO;
-    ta.style.position = "fixed";
-    ta.style.opacity  = "0";
+    ta.value = lastSEORaw;
+    Object.assign(ta.style, { position: "fixed", opacity: "0" });
     document.body.appendChild(ta);
     ta.select();
     document.execCommand("copy");
     document.body.removeChild(ta);
     btn.textContent = "Copied ✓";
-    setTimeout(() => { btn.textContent = "Copy All"; }, 2000);
+    setTimeout(() => { btn.textContent = "Copy"; }, 2000);
   }
 }
 
-// ── UI helpers ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════
+// LOADING STEPS (animated sequence)
+// ══════════════════════════════════════════════
+const STEP_LABELS = [
+  "NORMALIZING INPUT",
+  "QUERYING 3 AI MODELS IN PARALLEL",
+  "SEMANTIC VOTE ANALYSIS",
+  "VERIFICATION PASS",
+  "GENERATING LUXURY SEO COPY"
+];
+const STEP_DELAYS = [0, 600, 2200, 4000, 6500];
+
+function showLoading() {
+  clearStepTimer();
+  const panel = document.getElementById("loadingPanel");
+  panel.classList.add("is-active");
+
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById(`step${i}`);
+    el.className = "loading-step";
+    el.textContent = STEP_LABELS[i];
+  }
+
+  let current = 0;
+  function tick() {
+    if (current > 0) {
+      document.getElementById(`step${current - 1}`).className = "loading-step is-done";
+    }
+    if (current < 5) {
+      document.getElementById(`step${current}`).className = "loading-step is-active";
+    }
+    current++;
+    if (current <= 5) {
+      stepTimer = setTimeout(tick, STEP_DELAYS[current] - (STEP_DELAYS[current - 1] || 0));
+    }
+  }
+  tick();
+}
+
+function hideLoading() {
+  clearStepTimer();
+  document.getElementById("loadingPanel").classList.remove("is-active");
+}
+
+function clearStepTimer() {
+  if (stepTimer) { clearTimeout(stepTimer); stepTimer = null; }
+}
+
+// ══════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════
 function showError(msg) {
-  const el = document.getElementById("errorMsg");
-  el.textContent = msg;
+  const el = document.getElementById("errorBar");
+  el.textContent = "⚠ " + msg;
   el.classList.add("is-visible");
 }
-
 function hideError() {
-  document.getElementById("errorMsg").classList.remove("is-visible");
+  document.getElementById("errorBar").classList.remove("is-visible");
+}
+function hideResult() {
+  document.getElementById("result").classList.remove("is-visible");
 }
 
-function escapeHTML(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+function escHtml(str) {
+  return (str || "").toString()
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// ── Keyboard shortcut: Enter to generate ──────────────────────────────────
+// ── Keyboard shortcut ─────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("nameInput").addEventListener("keydown", (e) => {
+  document.getElementById("nameInput").addEventListener("keydown", e => {
     if (e.key === "Enter") generate();
   });
 });
