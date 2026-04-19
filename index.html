@@ -848,7 +848,7 @@ async function generate() {
 // ══════════════════════════════════════════════
 async function fetchProxy(url) {
   const res = await fetch(
-    "https://api.allorigins.win/raw?url=" + encodeURIComponent(url)
+    "https://corsproxy.io/?url=" + encodeURIComponent(url)
   );
   return await res.text();
 }
