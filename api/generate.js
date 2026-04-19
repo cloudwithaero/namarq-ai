@@ -1,67 +1,23 @@
 export default async function handler(req, res) {
   try {
-
     if (req.method !== "POST") {
       return res.status(200).json({ output: "❌ Only POST allowed" });
     }
 
-    // 🛡️ sanitize inputs
-    const name   = (req.body?.name   || "").toString().trim();
-    const gender = (req.body?.gender || "").toString().trim();
-    const top    = (req.body?.top    || "").toString().trim();
-    const heart  = (req.body?.heart  || "").toString().trim();
-    const base   = (req.body?.base   || "").toString().trim();
-    const vibe   = (req.body?.vibe   || "").toString().trim();
+    const name = (req.body?.name || "").toString().trim();
+    if (!name) {
+      return res.status(200).json({ output: "❌ Enter perfume name" });
+    }
 
-    // 🧠 slug
-    const slug = (name || "perfume")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-");
+    const OR_KEY = process.env.OPENROUTER_API_KEY;
 
-    // 🎯 AI prompt (strict format)
-    const prompt = `
-You are the SEO Engine for Namarq Perfumes Egypt.
-
-### MY INPUTS:
-Name: ${name}
-Gender: ${gender}
-Top: ${top}
-Heart: ${heart}
-Base: ${base}
-Vibe: ${vibe}
-
-### OUTPUT FORMAT (STRICT):
-
-## Short description
-
-New · SEO Recommended
-
-[Count]/200 (Recommended)
-
-[A luxury ${gender || "unisex"} fragrance with ${top}, ${heart} and ${base}.]
-
-## SEO settings
-
-**Product URL**
-../product/${slug}
-https://namarq-perfumes.online/en/product/all/${slug}
-
-**Title**
-${name || "Perfume"} Perfume | Namarq Perfumes Egypt
-
-**Description**
-Shop ${name || "this perfume"} at Namarq. A ${vibe || "luxury"} ${gender || "unisex"} fragrance. Free shipping on orders over 1500 LE.
-
-STRICT: NO EXTRA TEXT
-`;
-
-    // 🧠 safe fetch
-    async function callModel(model) {
+    // 🔹 Helper
+    async function ask(model, prompt) {
       try {
         const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Authorization": `Bearer ${OR_KEY}`,
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
@@ -69,54 +25,93 @@ STRICT: NO EXTRA TEXT
             messages: [{ role: "user", content: prompt }]
           })
         });
-
         return await r.json();
       } catch (e) {
         return { error: e.toString() };
       }
     }
 
-    // 🔥 models (auto switching)
-    const models = [
-      "google/gemini-2.0-flash-exp:free",
-      "mistralai/mistral-7b-instruct:free",
-      "openrouter/free"
-    ];
+    // 🔥 STEP 1 — Fetch perfume data (attempt 1)
+    const prompt1 = `
+Give accurate perfume data for: ${name}
 
-    let output = null;
+Return JSON only:
+{
+ "top": "...",
+ "heart": "...",
+ "base": "...",
+ "gender": "...",
+ "vibe": "..."
+}
+NO EXTRA TEXT
+`;
 
-    for (let model of models) {
-      const data = await callModel(model);
+    let data1 = await ask("google/gemini-2.0-flash-exp:free", prompt1);
+    let text1 = data1?.choices?.[0]?.message?.content || "{}";
 
-      const text = data?.choices?.[0]?.message?.content;
+    // 🔥 STEP 2 — Fetch again (attempt 2)
+    let data2 = await ask("mistralai/mistral-7b-instruct:free", prompt1);
+    let text2 = data2?.choices?.[0]?.message?.content || "{}";
 
-      if (text) {
-        output = text;
-        break;
-      }
+    function parseJSON(txt) {
+      try { return JSON.parse(txt); } catch { return {}; }
     }
 
-    // 🧠 Smart fallback (luxury generator)
-    function smartFallback() {
+    const p1 = parseJSON(text1);
+    const p2 = parseJSON(text2);
 
-      const safeName   = name || "Signature Perfume";
-      const safeGender = gender || "unisex";
-      const safeVibe   = vibe || "elegant";
+    // 🔥 STEP 3 — Merge + validate
+    function pick(a, b, fallback) {
+      if (a && b && a === b) return { value: a, score: 2 };
+      if (a && b && a !== b) return { value: a, score: 1 };
+      if (a) return { value: a, score: 1 };
+      if (b) return { value: b, score: 1 };
+      return { value: fallback, score: 0 };
+    }
 
-      const smartTop   = top   || "citrus, bergamot";
-      const smartHeart = heart || "jasmine, rose";
-      const smartBase  = base  || "amber, musk, woody accords";
+    const topPick = pick(p1.top, p2.top, "citrus, fresh");
+    const heartPick = pick(p1.heart, p2.heart, "floral notes");
+    const basePick = pick(p1.base, p2.base, "woody, musk");
+    const genderPick = pick(p1.gender, p2.gender, "unisex");
+    const vibePick = pick(p1.vibe, p2.vibe, "elegant");
 
-      const description = `An exquisite ${safeVibe} ${safeGender} fragrance opening with ${smartTop}, evolving into a refined heart of ${smartHeart}, and settling into a rich base of ${smartBase}. Crafted to leave a lasting impression of elegance and depth.`;
+    const totalScore = topPick.score + heartPick.score + basePick.score;
 
-      return `
+    let confidence = "Low";
+    if (totalScore >= 5) confidence = "High";
+    else if (totalScore >= 3) confidence = "Medium";
+
+    const top = topPick.value;
+    const heart = heartPick.value;
+    const base = basePick.value;
+    const gender = genderPick.value;
+    const vibe = vibePick.value;
+
+    // 🔥 STEP 4 — Generate SEO
+    const slug = (name || "perfume")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+
+    const seoPrompt = `
+You are the SEO Engine for Namarq Perfumes Egypt.
+
+### MY INPUTS:
+Product Name: ${name}
+Gender: ${gender}
+Top Notes: ${top}
+Heart Notes: ${heart}
+Base Notes: ${base}
+Vibe/Occasion: ${vibe}
+
+### OUTPUT FORMAT (STRICT):
+
 ## Short description
 
 New · SEO Recommended
 
-180/200 (Recommended)
+150/200 (Recommended)
 
-${description}
+A luxury ${gender} fragrance with ${top}, ${heart} and ${base}. A bold statement scent at Namarq Egypt.
 
 ## SEO settings
 
@@ -126,17 +121,48 @@ https://namarq-perfumes.online/en/product/all/${slug}
 
 **Title**
 
-${safeName} Perfume | Namarq Perfumes Egypt
+${name} Perfume | Namarq Perfumes Egypt
 
 **Description**
 
-Shop ${safeName} at Namarq. A ${safeVibe} ${safeGender} fragrance. Free shipping on orders over 1500 LE.
-`;
-    }
+Shop ${name} at Namarq. A ${vibe} ${gender} fragrance. Free shipping on orders over 1500 LE.
 
-    // 🛟 fallback if AI fails
+## Data Confidence
+
+${confidence}
+
+STRICT: NO EXTRA TEXT
+`;
+
+    let seoData = await ask("google/gemini-2.0-flash-exp:free", seoPrompt);
+    let output = seoData?.choices?.[0]?.message?.content;
+
+    // 🛟 fallback
     if (!output) {
-      output = smartFallback();
+      output = `
+## Short description
+
+New · SEO Recommended
+
+150/200 (Recommended)
+
+A ${vibe} ${gender} fragrance featuring ${top}, ${heart}, and ${base}. A refined scent from Namarq Egypt.
+
+## SEO settings
+
+**Product URL**
+../product/${slug}
+
+**Title**
+${name} Perfume | Namarq Perfumes Egypt
+
+**Description**
+Shop ${name} at Namarq. A ${vibe} ${gender} fragrance. Free shipping on orders over 1500 LE.
+
+## Data Confidence
+
+${confidence}
+`;
     }
 
     return res.status(200).json({ output });
