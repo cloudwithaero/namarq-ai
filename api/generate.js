@@ -2,35 +2,8 @@
 // Namarq AI – Perfume SEO Generator  v3.0
 // api/generate.js  (Vercel Serverless Function – ES Module)
 // =============================================================================
-//
-// ACCURACY PIPELINE (4 stages):
-//
-//   Stage 0 – Name normalization + ground-truth knowledge base lookup
-//             If the fragrance is in the curated KB, inject it as a seed.
-//
-//   Stage 1 – Triple-model parallel extraction
-//             Three independent LLMs each return a structured olfactory profile.
-//             Runs in parallel — latency is same as single call.
-//             Models: Gemini Flash · Mistral-7B · Llama-3.1-8B
-//
-//   Stage 2 – Semantic voting + confidence scoring
-//             Fields are compared with fuzzy normalization (not exact match).
-//             Votes tallied per field; plurality winner selected.
-//             Confidence = weighted vote ratio across all scored fields.
-//
-//   Stage 3 – Verification pass  (fires on Medium or Low confidence)
-//             A 4th model context receives all 3 raw answers + KB seed and
-//             adjudicates. Its answer is added twice to the vote pool (higher weight).
-//             Drives Low→Medium and Medium→High in most real-world cases.
-//
-//   Stage 4 – Luxury SEO generation
-//             Gemini Flash with tight system prompt + full synthesized profile.
-//             Returns 5 structured sections consumed by the frontend.
-//
-// =============================================================================
 
 export default async function handler(req, res) {
-
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -46,11 +19,9 @@ export default async function handler(req, res) {
   }
 
   try {
-
     // ── STAGE 0: Normalize + KB seed ─────────────────────────────────────────
     const name    = normalizePerfumeName(rawName);
     const kbEntry = FRAGRANCE_KB[buildKey(name)] || null;
-
 
     // ── STAGE 1: Triple-model parallel extraction ─────────────────────────────
     const noteSystem =
@@ -72,14 +43,12 @@ export default async function handler(req, res) {
     const pB = extractJSON(rB);
     const pC = extractJSON(rC);
 
-
     // ── STAGE 2: Semantic voting + confidence ─────────────────────────────────
     let voted      = semanticVote([pA, pB, pC], kbEntry, name);
     let profile    = voted.profile;
     let confidence = voted.confidence;
     let voteScore  = voted.score;
     const voteMax  = voted.max;
-
 
     // ── STAGE 3: Verification pass (fires if not already High) ───────────────
     if (confidence !== "High") {
@@ -102,13 +71,13 @@ export default async function handler(req, res) {
       const rV  = await callModel(OR_KEY, "google/gemini-2.0-flash-exp:free", verifySystem, verifyPrompt, 0.1);
       const pV  = extractJSON(rV);
 
-      // Verification model's answer counts as 2 votes (higher authority)
-      const reVoted = semanticVote([pA, pB, pC, pV, pV], kbEntry, name);
-      profile    = reVoted.profile;
-      confidence = reVoted.confidence;
-      voteScore  = reVoted.score;
+      if (Object.keys(pV).length > 0) {
+        const reVoted = semanticVote([pA, pB, pC, pV, pV], kbEntry, name);
+        profile    = reVoted.profile;
+        confidence = reVoted.confidence;
+        voteScore  = reVoted.score;
+      }
     }
-
 
     // ── STAGE 4: Luxury SEO generation ───────────────────────────────────────
     const finalName = profile.canonical_name || name;
@@ -129,7 +98,6 @@ export default async function handler(req, res) {
     const rSEO    = await callModel(OR_KEY, "google/gemini-2.0-flash-exp:free", seoSystem, seoPrompt, 0.7);
     const seoText = extractText(rSEO) || buildFallbackSEO(finalName, house, profile, slug);
 
-
     // ── Response ──────────────────────────────────────────────────────────────
     return res.status(200).json({
       name:       finalName,
@@ -148,9 +116,9 @@ export default async function handler(req, res) {
         concentration: profile.concentration || "—",
         season:        profile.season        || "—",
         occasion:      profile.occasion      || "—",
-        vibe:          profile.vibe          || "—",
         longevity:     profile.longevity     || "—",
         sillage:       profile.sillage       || "—",
+        character:     profile.vibe          || "—",
       },
       seo: seoText,
     });
@@ -160,7 +128,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal error. Please try again.", detail: err.message });
   }
 }
-
 
 // =============================================================================
 // CORE UTILITIES
@@ -210,7 +177,6 @@ function extractText(apiResponse) {
   const c = apiResponse?.choices?.[0]?.message?.content;
   return (c && typeof c === "string" && c.trim()) ? c.trim() : null;
 }
-
 
 // =============================================================================
 // SEMANTIC VOTING ENGINE
@@ -262,7 +228,6 @@ function semanticVote(profiles, kbEntry, inputName) {
   }
 
   if (!merged.canonical_name) merged.canonical_name = inputName;
-
   return { profile: merged, confidence, score: totalScore, max: maxScore };
 }
 
@@ -288,7 +253,6 @@ function normalize(field, value) {
   }
   return v;
 }
-
 
 // =============================================================================
 // PROMPT BUILDERS
@@ -341,7 +305,7 @@ function buildSEOPrompt(name, house, profile, slug) {
     `this fragrance belongs to. Weave notes into narrative, never list them. ` +
     `Close with a line that creates desire. Correct grammar: "An" before vowel sounds.]\n\n` +
     `## Meta Title\n` +
-    `[Max 60 chars. Format: {Name} {Concentration} — {House} | Namarq Egypt]\n\n` +
+    `[Max 60 chars. Format: {Name} — {House} | Namarq Egypt]\n\n` +
     `## Meta Description\n` +
     `[Max 155 chars. Include fragrance name, one sensory detail, ` +
     `"Free delivery in Egypt on orders over 1500 EGP".]\n\n` +
@@ -352,7 +316,6 @@ function buildSEOPrompt(name, house, profile, slug) {
     `"perfume Egypt", "Namarq", Arabic market keywords]`
   );
 }
-
 
 // =============================================================================
 // NAME NORMALIZATION
@@ -429,7 +392,6 @@ function normalizePerfumeName(input) {
   ).join(" ");
 }
 
-
 // =============================================================================
 // SLUG + FALLBACK SEO
 // =============================================================================
@@ -445,24 +407,19 @@ function buildFallbackSEO(name, house, profile, slug) {
   const art = /^[aeiou]/i.test(profile.gender || "") ? "An" : "A";
   return [
     "## Short Description", "",
-    `${art} ${(profile.gender || "").toLowerCase()} fragrance by ${house || "the house"} — ` +
-    `opening with ${profile.top}, evolving through ${profile.heart}, ` +
-    `and resting on a foundation of ${profile.base}.`,
+    `${art} ${(profile.gender || "").toLowerCase()} fragrance by the house — opening with ${profile.top || "—"}, evolving through ${profile.heart || "—"}, and resting on a foundation of ${profile.base || "—"}.`,
     "", "## Meta Title", "",
-    `${name} ${profile.concentration} — ${house} | Namarq Egypt`,
+    `${house || "Creed"} — | Namarq Egypt`,
     "", "## Meta Description", "",
-    `Shop ${name} at Namarq. ${profile.gender} fragrance. ` +
-    `Free delivery in Egypt on orders over 1500 EGP.`,
+    `Shop ${house || "Creed"} at Namarq. fragrance. Free delivery in Egypt on orders over 1500 EGP.`,
     "", "## Product URL", "", `/product/${slug}`,
     "", "## SEO Tags", "",
-    `${name}, ${house}, ${profile.gender}, ${profile.top}, perfume Egypt, Namarq`,
+    `${house || "Creed"}, perfume Egypt, Namarq`,
   ].join("\n");
 }
 
-
 // =============================================================================
 // FRAGRANCE KNOWLEDGE BASE — ground-truth seeds
-// Keys must exactly match buildKey(canonical_name)
 // =============================================================================
 
 const FRAGRANCE_KB = {
