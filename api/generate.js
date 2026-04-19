@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -7,7 +6,7 @@ export default async function handler(req, res) {
   const { name, gender, top, heart, base, vibe } = req.body;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -18,7 +17,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: "You are an SEO engine. Output EXACT format only."
+            content: "You are an SEO engine. Output EXACT format only. No extra text."
           },
           {
             role: "user",
@@ -33,7 +32,7 @@ You are the SEO Engine for Namarq Perfumes Egypt.
 5. Base Notes: ${base}
 6. Vibe/Occasion: ${vibe}
 
-### OUTPUT FORMAT (Copy Exactly):
+### YOUR OUTPUT FORMAT (Copy Exactly):
 
 ## Short description
 
@@ -60,25 +59,26 @@ ${name} Perfume | Namarq Perfumes Egypt
 160 characters max
 
 Shop ${name} at Namarq. A ${vibe} ${gender} fragrance. Free shipping on orders over 1500 LE.
-
-STRICT: NO EXTRA TEXT
 `
           }
         ]
       })
     });
 
-    const data = await response.json();
+    const data = await r.json();
 
-    const output = data.choices?.[0]?.message?.content;
-
-    if (!output) {
-      return res.status(200).json({ output: "⚠️ AI error — try again" });
+    // 👇 أهم سطرين debugging
+    if (!data.choices) {
+      return res.status(200).json({
+        output: "❌ API error:\n" + JSON.stringify(data, null, 2)
+      });
     }
+
+    const output = data.choices[0].message.content;
 
     return res.status(200).json({ output });
 
-  } catch (err) {
-    return res.status(500).json({ error: "AI failed" });
+  } catch (e) {
+    return res.status(500).json({ error: "Server crashed" });
   }
 }
