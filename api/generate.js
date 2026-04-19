@@ -1,31 +1,62 @@
 export default async function handler(req, res) {
-  // 🛡️ دايمًا رجّع response مهما حصل
   try {
 
     if (req.method !== "POST") {
       return res.status(200).json({ output: "❌ Only POST allowed" });
     }
 
-    const name   = (req.body?.name   || "Perfume").toString();
-    const gender = (req.body?.gender || "unisex").toString();
-    const top    = (req.body?.top    || "").toString();
-    const heart  = (req.body?.heart  || "").toString();
-    const base   = (req.body?.base   || "").toString();
-    const vibe   = (req.body?.vibe   || "").toString();
+    // 🛡️ sanitize inputs
+    const name   = (req.body?.name   || "").toString().trim();
+    const gender = (req.body?.gender || "").toString().trim();
+    const top    = (req.body?.top    || "").toString().trim();
+    const heart  = (req.body?.heart  || "").toString().trim();
+    const base   = (req.body?.base   || "").toString().trim();
+    const vibe   = (req.body?.vibe   || "").toString().trim();
 
+    // 🧠 slug
+    const slug = (name || "perfume")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+
+    // 🎯 AI prompt (strict format)
     const prompt = `
-Generate short SEO perfume description.
+You are the SEO Engine for Namarq Perfumes Egypt.
 
+### MY INPUTS:
 Name: ${name}
 Gender: ${gender}
 Top: ${top}
 Heart: ${heart}
 Base: ${base}
 Vibe: ${vibe}
+
+### OUTPUT FORMAT (STRICT):
+
+## Short description
+
+New · SEO Recommended
+
+[Count]/200 (Recommended)
+
+[A luxury ${gender || "unisex"} fragrance with ${top}, ${heart} and ${base}.]
+
+## SEO settings
+
+**Product URL**
+../product/${slug}
+https://namarq-perfumes.online/en/product/all/${slug}
+
+**Title**
+${name || "Perfume"} Perfume | Namarq Perfumes Egypt
+
+**Description**
+Shop ${name || "this perfume"} at Namarq. A ${vibe || "luxury"} ${gender || "unisex"} fragrance. Free shipping on orders over 1500 LE.
+
+STRICT: NO EXTRA TEXT
 `;
 
-    // 🧠 helper آمن
-    async function safeFetch(model) {
+    // 🧠 safe fetch
+    async function callModel(model) {
       try {
         const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
@@ -40,13 +71,12 @@ Vibe: ${vibe}
         });
 
         return await r.json();
-
       } catch (e) {
         return { error: e.toString() };
       }
     }
 
-    // 🔥 موديلات (واحد منهم هيشتغل)
+    // 🔥 models (auto switching)
     const models = [
       "google/gemini-2.0-flash-exp:free",
       "mistralai/mistral-7b-instruct:free",
@@ -56,7 +86,7 @@ Vibe: ${vibe}
     let output = null;
 
     for (let model of models) {
-      const data = await safeFetch(model);
+      const data = await callModel(model);
 
       const text = data?.choices?.[0]?.message?.content;
 
@@ -66,15 +96,47 @@ Vibe: ${vibe}
       }
     }
 
-    // 🛟 fallback لو كله فشل
-    if (!output) {
-      output = `## Short description
+    // 🧠 Smart fallback (luxury generator)
+    function smartFallback() {
+
+      const safeName   = name || "Signature Perfume";
+      const safeGender = gender || "unisex";
+      const safeVibe   = vibe || "elegant";
+
+      const smartTop   = top   || "citrus, bergamot";
+      const smartHeart = heart || "jasmine, rose";
+      const smartBase  = base  || "amber, musk, woody accords";
+
+      const description = `An exquisite ${safeVibe} ${safeGender} fragrance opening with ${smartTop}, evolving into a refined heart of ${smartHeart}, and settling into a rich base of ${smartBase}. Crafted to leave a lasting impression of elegance and depth.`;
+
+      return `
+## Short description
 
 New · SEO Recommended
 
-120/200 (Recommended)
+180/200 (Recommended)
 
-A ${vibe} ${gender} fragrance featuring ${top}, ${heart}, and ${base}. A refined scent from Namarq Egypt.`;
+${description}
+
+## SEO settings
+
+**Product URL**
+../product/${slug}
+https://namarq-perfumes.online/en/product/all/${slug}
+
+**Title**
+
+${safeName} Perfume | Namarq Perfumes Egypt
+
+**Description**
+
+Shop ${safeName} at Namarq. A ${safeVibe} ${safeGender} fragrance. Free shipping on orders over 1500 LE.
+`;
+    }
+
+    // 🛟 fallback if AI fails
+    if (!output) {
+      output = smartFallback();
     }
 
     return res.status(200).json({ output });
