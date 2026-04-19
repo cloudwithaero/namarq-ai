@@ -1,923 +1,849 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Namarq AI — Perfume Intelligence</title>
-<meta name="description" content="AI-powered SEO intelligence for Namarq Perfumes. Internal tool.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
-
-<style>
-/* ═══════════════════════════════════════════
-   TOKENS
-═══════════════════════════════════════════ */
-:root {
-  --black:    #0A0A08;
-  --black2:   #111110;
-  --black3:   #1A1A18;
-  --black4:   #252522;
-  --grey1:    #2E2E2B;
-  --grey2:    #3D3D3A;
-  --grey3:    #6B6B66;
-  --grey4:    #9A9A94;
-  --off:      #C8C8C0;
-  --cream:    #E8E5DC;
-  --gold:     #C9A84C;
-  --gold2:    #E6C97A;
-  --gold3:    #F5E4A8;
-  --amber:    #B87333;
-  --red:      #8B2020;
-  --green:    #1A4A1A;
-  --green2:   #2D7A2D;
-
-  --display:  'Bebas Neue', sans-serif;
-  --serif:    'DM Serif Display', Georgia, serif;
-  --body:     'Barlow', system-ui, sans-serif;
-  --mono:     'DM Mono', monospace;
-
-  --ease:     cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* ═══════════════════════════════════════════
-   RESET + BASE
-═══════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-
-body {
-  background: var(--black);
-  color: var(--cream);
-  font-family: var(--body);
-  font-size: 15px;
-  line-height: 1.6;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ═══════════════════════════════════════════
-   NOISE TEXTURE OVERLAY
-═══════════════════════════════════════════ */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-  opacity: 0.025;
-  pointer-events: none;
-  z-index: 9999;
-}
-
-/* ═══════════════════════════════════════════
-   LAYOUT
-═══════════════════════════════════════════ */
-.page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 24px 120px;
-}
-
-/* ═══════════════════════════════════════════
-   HEADER
-═══════════════════════════════════════════ */
-.header {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  border-bottom: 1px solid var(--grey1);
-  padding: 40px 0 20px;
-  margin-bottom: 72px;
-  gap: 24px;
-}
-
-.header__left { display: flex; flex-direction: column; gap: 2px; }
-
-.header__wordmark {
-  font-family: var(--display);
-  font-size: clamp(56px, 10vw, 96px);
-  letter-spacing: 0.08em;
-  color: var(--cream);
-  line-height: 0.9;
-  text-transform: uppercase;
-}
-
-.header__wordmark span {
-  color: var(--gold);
-}
-
-.header__sub {
-  font-family: var(--body);
-  font-weight: 300;
-  font-size: 10px;
-  letter-spacing: 0.5em;
-  color: var(--grey3);
-  text-transform: uppercase;
-  margin-top: 8px;
-}
-
-.header__badge {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  color: var(--gold);
-  border: 1px solid var(--grey1);
-  padding: 6px 12px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  align-self: flex-start;
-  margin-top: 12px;
-}
-
-/* ═══════════════════════════════════════════
-   INPUT ZONE
-═══════════════════════════════════════════ */
-.input-zone {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0;
-  border: 1px solid var(--grey2);
-  margin-bottom: 60px;
-  position: relative;
-}
-
-.input-zone::before {
-  content: 'FRAGRANCE';
-  position: absolute;
-  top: -1px;
-  left: 20px;
-  transform: translateY(-50%);
-  background: var(--black);
-  padding: 0 8px;
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: 0.35em;
-  color: var(--gold);
-}
-
-.input-zone input {
-  background: transparent;
-  border: none;
-  outline: none;
-  padding: 22px 24px;
-  font-family: var(--serif);
-  font-size: 22px;
-  color: var(--cream);
-  width: 100%;
-  caret-color: var(--gold);
-}
-
-.input-zone input::placeholder {
-  color: var(--grey2);
-  font-style: italic;
-}
-
-.input-zone input:focus {
-  background: var(--black2);
-}
-
-.generate-btn {
-  background: var(--gold);
-  border: none;
-  color: var(--black);
-  font-family: var(--display);
-  font-size: 14px;
-  letter-spacing: 0.2em;
-  padding: 0 32px;
-  cursor: pointer;
-  transition: background 0.2s var(--ease), color 0.2s;
-  white-space: nowrap;
-  min-width: 140px;
-}
-
-.generate-btn:hover:not(:disabled) {
-  background: var(--gold2);
-}
-
-.generate-btn:disabled {
-  background: var(--grey1);
-  color: var(--grey3);
-  cursor: not-allowed;
-}
-
-/* ═══════════════════════════════════════════
-   ERROR
-═══════════════════════════════════════════ */
-.error-bar {
-  display: none;
-  background: var(--red);
-  border-left: 3px solid #FF4444;
-  padding: 12px 20px;
-  margin-bottom: 24px;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  color: #FF9999;
-}
-.error-bar.is-visible { display: block; }
-
-/* ═══════════════════════════════════════════
-   LOADING
-═══════════════════════════════════════════ */
-.loading-panel {
-  display: none;
-  padding: 64px 0;
-  text-align: center;
-}
-.loading-panel.is-active { display: block; }
-
-.loading-bar-wrap {
-  width: 240px;
-  height: 1px;
-  background: var(--grey1);
-  margin: 0 auto 28px;
-  position: relative;
-  overflow: hidden;
-}
-
-.loading-bar {
-  position: absolute;
-  top: 0; left: -60%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  animation: scan 1.8s ease-in-out infinite;
-}
-
-@keyframes scan {
-  0%   { left: -60%; }
-  100% { left: 100%; }
-}
-
-.loading-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-}
-
-.loading-step {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--grey3);
-  opacity: 0;
-  transition: opacity 0.4s;
-}
-
-.loading-step.is-active {
-  color: var(--gold);
-  opacity: 1;
-}
-
-.loading-step.is-done {
-  color: var(--grey2);
-  opacity: 0.5;
-}
-
-/* ═══════════════════════════════════════════
-   RESULT
-═══════════════════════════════════════════ */
-.result {
-  display: none;
-  animation: rise 0.5s var(--ease) forwards;
-}
-.result.is-visible { display: block; }
-
-@keyframes rise {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Identity Row ────────────────────────────── */
-.identity {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--grey1);
-  margin-bottom: 40px;
-  flex-wrap: wrap;
-}
-
-.identity__name {
-  font-family: var(--display);
-  font-size: clamp(36px, 6vw, 64px);
-  line-height: 0.95;
-  letter-spacing: 0.04em;
-  color: var(--cream);
-  text-transform: uppercase;
-}
-
-.identity__house {
-  font-family: var(--body);
-  font-weight: 300;
-  font-size: 11px;
-  letter-spacing: 0.4em;
-  color: var(--grey3);
-  text-transform: uppercase;
-  margin-top: 6px;
-}
-
-.identity__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: flex-end;
-}
-
-/* ── Confidence Badge ────────────────────────── */
-.conf-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  border: 1px solid;
-}
-
-.conf-badge--high   { border-color: var(--green2); color: #6DCC6D; background: rgba(45,122,45,0.12); }
-.conf-badge--medium { border-color: var(--gold);   color: var(--gold2); background: rgba(201,168,76,0.10); }
-.conf-badge--low    { border-color: var(--red);    color: #FF8080; background: rgba(139,32,32,0.12); }
-
-.conf-badge__dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  animation: blink 2s ease-in-out infinite;
-}
-.conf-badge--high   .conf-badge__dot { background: #6DCC6D; }
-.conf-badge--medium .conf-badge__dot { background: var(--gold2); }
-.conf-badge--low    .conf-badge__dot { background: #FF8080; }
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-.kb-tag {
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: 0.2em;
-  color: var(--gold);
-  border: 1px solid var(--grey1);
-  padding: 4px 10px;
-  text-transform: uppercase;
-}
-
-/* ── Profile Grid ───────────────────────────── */
-.profile-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--grey1);
-  border: 1px solid var(--grey1);
-  margin-bottom: 48px;
-}
-
-@media (max-width: 700px) {
-  .profile-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 400px) {
-  .profile-grid { grid-template-columns: 1fr; }
-}
-
-.profile-cell {
-  background: var(--black2);
-  padding: 18px 20px;
-  transition: background 0.2s;
-}
-
-.profile-cell:hover { background: var(--black3); }
-
-.profile-cell--wide {
-  grid-column: span 2;
-}
-
-.profile-key {
-  font-family: var(--mono);
-  font-size: 7px;
-  letter-spacing: 0.35em;
-  color: var(--grey3);
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-
-.profile-val {
-  font-family: var(--body);
-  font-weight: 400;
-  font-size: 13px;
-  color: var(--off);
-  line-height: 1.5;
-}
-
-.profile-val--notes {
-  font-family: var(--serif);
-  font-size: 14px;
-  color: var(--cream);
-  font-style: italic;
-}
-
-/* ── Accords pills ──────────────────────────── */
-.accord-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.accord-pill {
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border: 1px solid var(--grey2);
-  color: var(--gold);
-  background: rgba(201,168,76,0.06);
-}
-
-/* ── SEO Panel ──────────────────────────────── */
-.seo-panel {
-  border: 1px solid var(--grey1);
-  background: var(--black2);
-}
-
-.seo-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--grey1);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.seo-panel__title {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.4em;
-  color: var(--grey3);
-  text-transform: uppercase;
-}
-
-.seo-panel__actions {
-  display: flex;
-  gap: 8px;
-}
-
-.copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 16px;
-  border: 1px solid var(--grey2);
-  background: transparent;
-  color: var(--off);
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.copy-btn:hover {
-  border-color: var(--gold);
-  color: var(--gold);
-}
-
-.copy-btn.copied {
-  border-color: var(--green2);
-  color: #6DCC6D;
-}
-
-.copy-btn svg { width: 11px; height: 11px; flex-shrink: 0; }
-
-.seo-body {
-  padding: 32px 28px;
-}
-
-/* ── SEO Markdown Styles ────────────────────── */
-.seo-section {
-  margin-bottom: 32px;
-  padding-bottom: 32px;
-  border-bottom: 1px solid var(--grey1);
-}
-.seo-section:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.seo-section-title {
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.seo-section-title::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--grey1);
-}
-
-.seo-description {
-  font-family: var(--serif);
-  font-size: 17px;
-  line-height: 1.8;
-  color: var(--cream);
-  font-style: italic;
-  border-left: 2px solid var(--gold);
-  padding-left: 20px;
-}
-
-.seo-meta-value {
-  font-family: var(--body);
-  font-weight: 400;
-  font-size: 15px;
-  color: var(--off);
-  line-height: 1.6;
-}
-
-.seo-url {
-  font-family: var(--mono);
-  font-size: 13px;
-  color: var(--gold2);
-  background: var(--black3);
-  padding: 12px 16px;
-  border-left: 2px solid var(--grey2);
-  word-break: break-all;
-}
-
-.seo-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.seo-tag {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  padding: 5px 12px;
-  border: 1px solid var(--grey2);
-  color: var(--grey4);
-  text-transform: lowercase;
-  transition: all 0.15s;
-}
-
-.seo-tag:hover {
-  border-color: var(--grey3);
-  color: var(--off);
-}
-
-/* ── Vote Score Bar ─────────────────────────── */
-.vote-bar-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid var(--grey1);
-}
-
-.vote-bar-label {
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: 0.25em;
-  color: var(--grey3);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.vote-bar-track {
-  flex: 1;
-  height: 2px;
-  background: var(--grey1);
-  position: relative;
-  overflow: hidden;
-}
-
-.vote-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--amber), var(--gold), var(--gold2));
-  transition: width 0.8s var(--ease);
-}
-
-.vote-bar-score {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: var(--gold);
-  white-space: nowrap;
-}
-
-/* ── Footer ─────────────────────────────────── */
-.footer {
-  margin-top: 80px;
-  padding-top: 20px;
-  border-top: 1px solid var(--grey1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.footer__left {
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: 0.3em;
-  color: var(--grey2);
-  text-transform: uppercase;
-}
-
-.footer__right {
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: 0.2em;
-  color: var(--grey2);
-}
-
-/* ═══════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════ */
-@media (max-width: 640px) {
-  .header { grid-template-columns: 1fr; }
-  .input-zone { grid-template-columns: 1fr; }
-  .generate-btn { padding: 16px; min-width: unset; }
-  .seo-body { padding: 24px 20px; }
-  .identity__meta { align-items: flex-start; }
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NAMARQ — Perfume Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & Base ────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a08;
+      --surface:   #111110;
+      --border:    #2a2a26;
+      --border-hi: #3d3d38;
+      --gold:      #c9a84c;
+      --gold-dim:  #8a6e2f;
+      --gold-bg:   #1a1508;
+      --text:      #e8e4dc;
+      --text-dim:  #7a766e;
+      --text-mid:  #b0aa9e;
+      --red:       #8b2020;
+      --green:     #1a4a2a;
+      --green-text:#4caf70;
+      --font-disp: 'Cormorant Garamond', Georgia, serif;
+      --font-ui:   'Montserrat', sans-serif;
+      --radius:    2px;
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-weight: 300;
+      min-height: 100vh;
+      letter-spacing: 0.01em;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Grain overlay ───────────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.6;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────────────── */
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────── */
+    header {
+      padding: 52px 0 40px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 52px;
+      animation: fadeDown 0.8s ease both;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-family: var(--font-disp);
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 300;
+      letter-spacing: 0.18em;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .logo em {
+      color: var(--gold);
+      font-style: normal;
+    }
+
+    .tagline {
+      font-size: 0.6rem;
+      letter-spacing: 0.35em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
+    .version-badge {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--gold-dim);
+      border: 1px solid var(--gold-dim);
+      padding: 4px 10px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    /* ── Input section ───────────────────────────────────────────────── */
+    .input-section {
+      margin-bottom: 56px;
+      animation: fadeUp 0.8s 0.1s ease both;
+    }
+
+    .input-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border-hi);
+      transition: border-color 0.3s;
+    }
+
+    .input-row:focus-within {
+      border-color: var(--gold-dim);
+    }
+
+    .frag-input {
+      flex: 1;
+      background: var(--surface);
+      border: none;
+      outline: none;
+      padding: 18px 22px;
+      font-family: var(--font-disp);
+      font-size: 1.25rem;
+      font-weight: 300;
+      color: var(--text);
+      letter-spacing: 0.05em;
+    }
+
+    .frag-input::placeholder {
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    .gen-btn {
+      background: var(--gold);
+      color: var(--bg);
+      border: none;
+      padding: 0 36px;
+      font-family: var(--font-ui);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.25s, opacity 0.25s;
+      white-space: nowrap;
+    }
+
+    .gen-btn:hover { background: #d4b45a; }
+    .gen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Loading bar ─────────────────────────────────────────────────── */
+    .loading-bar {
+      height: 1px;
+      background: var(--border);
+      margin-top: -1px;
+      position: relative;
+      overflow: hidden;
+      display: none;
+    }
+
+    .loading-bar.active { display: block; }
+
+    .loading-bar::after {
+      content: '';
+      position: absolute;
+      left: -40%;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      animation: slide 1.4s infinite ease-in-out;
+    }
+
+    @keyframes slide {
+      0%   { left: -40%; }
+      100% { left: 100%; }
+    }
+
+    .loading-status {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--gold-dim);
+      text-transform: uppercase;
+      margin-top: 14px;
+      min-height: 16px;
+      display: none;
+    }
+
+    .loading-status.active { display: block; }
+
+    /* ── Error ───────────────────────────────────────────────────────── */
+    .error-box {
+      border: 1px solid var(--red);
+      background: rgba(139, 32, 32, 0.08);
+      padding: 16px 20px;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      color: #d47777;
+      margin-bottom: 32px;
+      display: none;
+    }
+    .error-box.active { display: block; }
+
+    /* ── Result ──────────────────────────────────────────────────────── */
+    #result { display: none; animation: fadeUp 0.6s ease both; }
+    #result.active { display: block; }
+
+    /* ── Name & House ────────────────────────────────────────────────── */
+    .result-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 10px;
+    }
+
+    .result-name {
+      font-family: var(--font-disp);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      line-height: 1.1;
+      color: var(--text);
+    }
+
+    .result-house {
+      font-size: 0.6rem;
+      letter-spacing: 0.35em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .confidence-badge {
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border: 1px solid;
+      white-space: nowrap;
+      margin-top: 8px;
+      flex-shrink: 0;
+    }
+
+    .confidence-badge.high  { color: var(--green-text); border-color: var(--green-text); background: rgba(76,175,112,0.06); }
+    .confidence-badge.medium{ color: var(--gold); border-color: var(--gold-dim); background: var(--gold-bg); }
+    .confidence-badge.low   { color: #d47777; border-color: var(--red); background: rgba(139,32,32,0.06); }
+
+    .fragrantica-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--gold-dim);
+      text-decoration: none;
+      text-transform: uppercase;
+      margin-bottom: 36px;
+      transition: color 0.2s;
+    }
+    .fragrantica-link:hover { color: var(--gold); }
+    .fragrantica-link svg { width: 10px; height: 10px; }
+
+    /* ── Profile Grid ────────────────────────────────────────────────── */
+    .section-label {
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .profile-grid {
+      border: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .profile-row {
+      display: grid;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row.cols-2 { grid-template-columns: 1fr 1fr; }
+    .profile-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .profile-row.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .profile-cell {
+      padding: 18px 20px;
+      border-right: 1px solid var(--border);
+    }
+    .profile-cell:last-child { border-right: none; }
+
+    .cell-label {
+      font-size: 0.52rem;
+      letter-spacing: 0.28em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .cell-value {
+      font-family: var(--font-disp);
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1.5;
+      font-style: italic;
+    }
+
+    .cell-value.dash { color: var(--border-hi); font-style: normal; }
+
+    /* Accord pills */
+    .accord-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .accord-pill {
+      font-family: var(--font-ui);
+      font-size: 0.58rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid var(--gold-dim);
+      background: var(--gold-bg);
+      padding: 3px 10px;
+    }
+
+    /* ── SEO Output ──────────────────────────────────────────────────── */
+    .seo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .seo-box {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 28px 28px 24px;
+      margin-bottom: 52px;
+    }
+
+    .seo-content {
+      font-family: var(--font-disp);
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--text-mid);
+      line-height: 1.85;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Style SEO section headers */
+    .seo-content .seo-h {
+      font-family: var(--font-ui);
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      display: block;
+      margin-top: 22px;
+      margin-bottom: 6px;
+    }
+    .seo-content .seo-h:first-child { margin-top: 0; }
+
+    .seo-content .seo-val {
+      display: block;
+      color: var(--text);
+      font-family: var(--font-disp);
+      font-size: 1.05rem;
+    }
+
+    .seo-content .seo-url {
+      font-family: var(--font-ui);
+      font-size: 0.78rem;
+      color: var(--gold-dim);
+      letter-spacing: 0.05em;
+    }
+
+    .seo-content .seo-tags {
+      font-family: var(--font-ui);
+      font-size: 0.7rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+    }
+
+    /* ── Copy button ─────────────────────────────────────────────────── */
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid var(--border-hi);
+      color: var(--text-dim);
+      padding: 7px 14px;
+      font-family: var(--font-ui);
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      border-color: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    .copy-btn.copied {
+      border-color: var(--green-text);
+      color: var(--green-text);
+    }
+
+    /* ── Char counter ────────────────────────────────────────────────── */
+    .char-counter {
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
+    .char-counter span { color: var(--gold); }
+
+    /* ── Footer ──────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-text {
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    /* ── Animations ──────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .wrap { padding: 0 16px; }
+      .profile-row.cols-4 { grid-template-columns: 1fr 1fr; }
+      .profile-row.cols-3 { grid-template-columns: 1fr 1fr; }
+      .gen-btn { padding: 0 20px; font-size: 0.6rem; }
+      .header-inner { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+  </style>
 </head>
-
 <body>
-<div class="page">
 
-  <!-- ── HEADER ─────────────────────────────── -->
-  <header class="header">
-    <div class="header__left">
-      <div class="header__wordmark">NAM<span>ARQ</span></div>
-      <div class="header__sub">Perfume Intelligence · Internal Tool</div>
+<div class="wrap">
+
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <header>
+    <div class="header-inner">
+      <div>
+        <div class="logo">NAM<em>ARQ</em></div>
+        <div class="tagline">Perfume Intelligence &nbsp;·&nbsp; Internal Tool</div>
+      </div>
+      <div class="version-badge">AI V4.1</div>
     </div>
-    <div class="header__badge">AI v3.0</div>
   </header>
 
-  <!-- ── INPUT ZONE ─────────────────────────── -->
-  <div class="input-zone">
-    <input
-      id="nameInput"
-      type="text"
-      placeholder="Enter fragrance name…"
-      autocomplete="off"
-      spellcheck="false"
-    >
-    <button class="generate-btn" id="generateBtn" onclick="generate()">
-      GENERATE
-    </button>
-  </div>
-
-  <!-- ── ERROR ──────────────────────────────── -->
-  <div class="error-bar" id="errorBar"></div>
-
-  <!-- ── LOADING ────────────────────────────── -->
-  <div class="loading-panel" id="loadingPanel">
-    <div class="loading-bar-wrap">
-      <div class="loading-bar"></div>
+  <!-- ── Input ──────────────────────────────────────────────────────── -->
+  <section class="input-section">
+    <div class="input-label">Fragrance</div>
+    <div class="input-row">
+      <input
+        id="fragInput"
+        class="frag-input"
+        type="text"
+        placeholder="e.g. Dior Sauvage, Black Orchid, Aventus…"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button id="genBtn" class="gen-btn" onclick="generate()">Generate</button>
     </div>
-    <div class="loading-steps">
-      <div class="loading-step" id="step0">NORMALIZING INPUT</div>
-      <div class="loading-step" id="step1">QUERYING 3 AI MODELS IN PARALLEL</div>
-      <div class="loading-step" id="step2">SEMANTIC VOTE ANALYSIS</div>
-      <div class="loading-step" id="step3">VERIFICATION PASS</div>
-      <div class="loading-step" id="step4">GENERATING LUXURY SEO COPY</div>
-    </div>
-  </div>
+    <div class="loading-bar" id="loadingBar"></div>
+    <div class="loading-status" id="loadingStatus"></div>
+  </section>
 
-  <!-- ── RESULT ─────────────────────────────── -->
-  <div class="result" id="result">
+  <!-- ── Error ──────────────────────────────────────────────────────── -->
+  <div class="error-box" id="errorBox"></div>
 
-    <!-- Identity -->
-    <div class="identity">
+  <!-- ── Result ─────────────────────────────────────────────────────── -->
+  <div id="result">
+
+    <!-- Name + Confidence -->
+    <div class="result-header">
       <div>
-        <div class="identity__name" id="rName"></div>
-        <div class="identity__house" id="rHouse"></div>
+        <div class="result-name" id="resultName"></div>
+        <div class="result-house" id="resultHouse"></div>
       </div>
-      <div class="identity__meta">
-        <div class="conf-badge" id="confBadge">
-          <div class="conf-badge__dot"></div>
-          <span id="confLabel"></span>
-        </div>
-        <div class="kb-tag" id="kbTag" style="display:none">KB VERIFIED</div>
-      </div>
+      <div class="confidence-badge" id="confidenceBadge"></div>
     </div>
+
+    <!-- Fragrantica source link -->
+    <a id="fragLink" class="fragrantica-link" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M1 6h10M6 1l5 5-5 5"/>
+      </svg>
+      View on Fragrantica
+    </a>
 
     <!-- Profile Grid -->
-    <div class="profile-grid" id="profileGrid"></div>
+    <div class="section-label">Olfactory Profile</div>
 
-    <!-- SEO Panel -->
-    <div class="seo-panel">
-      <div class="seo-panel__header">
-        <span class="seo-panel__title">SEO Output</span>
-        <div class="seo-panel__actions">
-          <button class="copy-btn" id="copyBtn" onclick="copyOutput()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="9" y="9" width="13" height="13" rx="1"/>
-              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-            </svg>
-            Copy
-          </button>
+    <div class="profile-grid">
+      <!-- Top & Heart -->
+      <div class="profile-row cols-2">
+        <div class="profile-cell">
+          <div class="cell-label">Top Notes</div>
+          <div class="cell-value" id="pTop">—</div>
+        </div>
+        <div class="profile-cell">
+          <div class="cell-label">Heart Notes</div>
+          <div class="cell-value" id="pHeart">—</div>
         </div>
       </div>
-
-      <div class="seo-body" id="seoBody"></div>
-
-      <div class="vote-bar-wrap">
-        <span class="vote-bar-label">Accuracy Score</span>
-        <div class="vote-bar-track">
-          <div class="vote-bar-fill" id="voteBarFill" style="width:0%"></div>
+      <!-- Base & Accords -->
+      <div class="profile-row cols-2">
+        <div class="profile-cell">
+          <div class="cell-label">Base Notes</div>
+          <div class="cell-value" id="pBase">—</div>
         </div>
-        <span class="vote-bar-score" id="voteScore"></span>
+        <div class="profile-cell">
+          <div class="cell-label">Accords</div>
+          <div id="pAccords" class="accord-pills"></div>
+        </div>
+      </div>
+      <!-- Gender / Concentration / Season / Occasion -->
+      <div class="profile-row cols-4">
+        <div class="profile-cell">
+          <div class="cell-label">Gender</div>
+          <div class="cell-value" id="pGender">—</div>
+        </div>
+        <div class="profile-cell">
+          <div class="cell-label">Concentration</div>
+          <div class="cell-value" id="pConc">—</div>
+        </div>
+        <div class="profile-cell">
+          <div class="cell-label">Season</div>
+          <div class="cell-value" id="pSeason">—</div>
+        </div>
+        <div class="profile-cell">
+          <div class="cell-label">Occasion</div>
+          <div class="cell-value" id="pOccasion">—</div>
+        </div>
+      </div>
+      <!-- Longevity / Sillage / Character -->
+      <div class="profile-row cols-3">
+        <div class="profile-cell">
+          <div class="cell-label">Longevity</div>
+          <div class="cell-value" id="pLongevity">—</div>
+        </div>
+        <div class="profile-cell">
+          <div class="cell-label">Sillage</div>
+          <div class="cell-value" id="pSillage">—</div>
+        </div>
+        <div class="profile-cell">
+          <div class="cell-label">Character</div>
+          <div class="cell-value" id="pCharacter">—</div>
+        </div>
       </div>
     </div>
 
-  </div><!-- /result -->
+    <!-- SEO Output -->
+    <div class="seo-header">
+      <div class="section-label" style="margin-bottom:0;border:none;padding:0">SEO Output</div>
+      <button class="copy-btn" id="copyBtn" onclick="copySEO()">
+        <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="4" y="4" width="9" height="9" rx="1"/>
+          <path d="M1 10V2a1 1 0 011-1h8"/>
+        </svg>
+        Copy
+      </button>
+    </div>
 
-  <!-- ── FOOTER ─────────────────────────────── -->
-  <footer class="footer">
-    <span class="footer__left">Namarq Perfume House · Egypt</span>
-    <span class="footer__right">Internal · Not for distribution</span>
+    <div class="seo-box">
+      <div class="seo-content" id="seoContent"></div>
+      <div class="char-counter" id="charCounter"></div>
+    </div>
+
+  </div><!-- /#result -->
+
+  <!-- ── Footer ─────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-text">Namarq &nbsp;·&nbsp; Internal SEO Tool</div>
+    <div class="footer-text">Data via Fragrantica</div>
   </footer>
 
-</div><!-- /page -->
-
-<!-- SAME YOUR ORIGINAL HTML ABOVE — NO CHANGE -->
-
-<!-- استبدل فقط الجزء بتاع <script> بالكامل بده 👇 -->
+</div><!-- /.wrap -->
 
 <script>
-// ══════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════
-let lastSEORaw = "";
-let stepTimer  = null;
+  // ── State ──────────────────────────────────────────────────────────────
+  let currentSEORaw = "";
 
-// ══════════════════════════════════════════════
-// GENERATE (UPDATED WITH SCRAPING)
-// ══════════════════════════════════════════════
-async function generate() {
+  // ── Enter key support ──────────────────────────────────────────────────
+  document.getElementById("fragInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") generate();
+  });
 
-  const input = document.getElementById("nameInput");
-  const btn   = document.getElementById("generateBtn");
-  const raw   = input.value.trim();
+  // ── Loading helpers ────────────────────────────────────────────────────
+  const STEPS = [
+    "Searching Fragrantica…",
+    "Fetching fragrance page…",
+    "Extracting notes & accords…",
+    "Generating SEO content…",
+    "Finalising…",
+  ];
 
-  if (!raw) {
-    showError("Please enter a fragrance name.");
-    return;
+  let stepTimer = null;
+
+  function startLoading() {
+    const bar    = document.getElementById("loadingBar");
+    const status = document.getElementById("loadingStatus");
+    bar.classList.add("active");
+    status.classList.add("active");
+    let i = 0;
+    status.textContent = STEPS[0];
+    stepTimer = setInterval(() => {
+      i = Math.min(i + 1, STEPS.length - 1);
+      status.textContent = STEPS[i];
+    }, 1800);
   }
 
-  hideError();
-  hideResult();
-  showLoading();
+  function stopLoading() {
+    clearInterval(stepTimer);
+    document.getElementById("loadingBar").classList.remove("active");
+    document.getElementById("loadingStatus").classList.remove("active");
+    document.getElementById("loadingStatus").textContent = "";
+  }
 
-  btn.disabled = true;
-  btn.textContent = "SCRAPING…";
+  // ── Main generate function ─────────────────────────────────────────────
+  async function generate() {
+    const input = document.getElementById("fragInput").value.trim();
+    if (!input) return;
 
-  try {
+    const btn    = document.getElementById("genBtn");
+    const errBox = document.getElementById("errorBox");
+    const result = document.getElementById("result");
 
-    const name = normalizeName(raw);
+    btn.disabled = true;
+    errBox.classList.remove("active");
+    result.classList.remove("active");
+    startLoading();
 
-    // ========= SEARCH =========
-    const searchUrl = "https://www.fragrantica.com/search/?query=" + encodeURIComponent(name);
-    const searchHtml = await fetchProxy(searchUrl);
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: input }),
+      });
 
-    const match = searchHtml.match(/href="(\/perfume\/[^"]+)"/);
-    if (!match) throw new Error("Perfume not found");
+      const data = await res.json();
 
-    const perfumeUrl = "https://www.fragrantica.com" + match[1];
+      if (!res.ok) {
+        throw new Error(data.error || `Server error ${res.status}`);
+      }
 
-    // ========= SCRAPE =========
-    const html = await fetchProxy(perfumeUrl);
-    const profile = parseFragrantica(html);
+      renderResult(data);
 
-    btn.textContent = "GENERATING SEO…";
+    } catch (err) {
+      errBox.textContent = `Error: ${err.message}`;
+      errBox.classList.add("active");
+    } finally {
+      btn.disabled = false;
+      stopLoading();
+    }
+  }
 
-    // ========= SEND TO API =========
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ name, profile })
+  // ── Render result ──────────────────────────────────────────────────────
+  function renderResult(data) {
+    const { name, house, confidence, fragranticaUrl, profile, seo } = data;
+
+    // Name & house
+    document.getElementById("resultName").textContent = name.toUpperCase();
+    document.getElementById("resultHouse").textContent = house.toUpperCase();
+
+    // Confidence badge
+    const badge = document.getElementById("confidenceBadge");
+    badge.className = `confidence-badge ${confidence}`;
+    const labels = { high: "● High Confidence", medium: "◐ Medium Confidence", low: "○ Low Confidence" };
+    badge.textContent = labels[confidence] || confidence;
+
+    // Fragrantica link
+    const fragLink = document.getElementById("fragLink");
+    if (fragranticaUrl) {
+      fragLink.href = fragranticaUrl;
+      fragLink.style.display = "inline-flex";
+    } else {
+      fragLink.style.display = "none";
+    }
+
+    // Profile cells
+    setCell("pTop",      profile.top);
+    setCell("pHeart",    profile.heart);
+    setCell("pBase",     profile.base);
+    setCell("pGender",   profile.gender);
+    setCell("pConc",     profile.concentration);
+    setCell("pSeason",   profile.season);
+    setCell("pOccasion", profile.occasion);
+    setCell("pLongevity",profile.longevity);
+    setCell("pSillage",  profile.sillage);
+    setCell("pCharacter",profile.character);
+
+    // Accords as pills
+    const accordsEl = document.getElementById("pAccords");
+    accordsEl.innerHTML = "";
+    if (profile.accords && profile.accords !== "—") {
+      profile.accords.split(",").map(a => a.trim()).filter(Boolean).forEach(accord => {
+        const pill = document.createElement("span");
+        pill.className = "accord-pill";
+        pill.textContent = accord;
+        accordsEl.appendChild(pill);
+      });
+    } else {
+      accordsEl.innerHTML = `<span style="color:var(--border-hi);font-size:1rem;font-family:var(--font-disp)">—</span>`;
+    }
+
+    // SEO content — parse and render nicely
+    currentSEORaw = seo;
+    renderSEO(seo);
+
+    // Show result
+    document.getElementById("result").classList.add("active");
+    document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // ── Set a profile cell ─────────────────────────────────────────────────
+  function setCell(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isEmpty = !value || value === "—";
+    el.textContent = isEmpty ? "—" : value;
+    el.className = isEmpty ? "cell-value dash" : "cell-value";
+  }
+
+  // ── Parse and render SEO sections ─────────────────────────────────────
+  function renderSEO(raw) {
+    const container = document.getElementById("seoContent");
+    const counter   = document.getElementById("charCounter");
+    container.innerHTML = "";
+
+    const sections = [
+      { key: "Short Description", cls: "seo-val" },
+      { key: "Meta Title",        cls: "seo-val" },
+      { key: "Meta Description",  cls: "seo-val" },
+      { key: "Product URL",       cls: "seo-url" },
+      { key: "SEO Tags",          cls: "seo-tags" },
+    ];
+
+    // Split raw text by ## headers
+    const parts = raw.split(/^## /m).filter(Boolean);
+
+    let shortDescLen = 0;
+
+    parts.forEach(part => {
+      const lines   = part.trim().split("\n");
+      const heading = lines[0].trim();
+      const body    = lines.slice(1).join("\n").trim();
+
+      const section = sections.find(s => heading.toLowerCase().includes(s.key.toLowerCase()));
+
+      const hEl = document.createElement("span");
+      hEl.className = "seo-h";
+      hEl.textContent = heading;
+      container.appendChild(hEl);
+
+      const vEl = document.createElement("span");
+      vEl.className = section ? section.cls : "seo-val";
+      vEl.textContent = body;
+      container.appendChild(vEl);
+
+      if (heading.toLowerCase().includes("short description")) {
+        shortDescLen = body.length;
+      }
     });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "API failed");
-
-    // ========= MERGE =========
-    data.profile = { ...profile, ...(data.profile || {}) };
-    data.name = name;
-    data.house = extractHouse(perfumeUrl);
-    data.confidence = "High";
-    data.voteScore = 18;
-    data.voteMax = 21;
-
-    renderResult(data);
-
-  } catch (err) {
-    hideLoading();
-    showError(err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "GENERATE";
+    // Char counter for Short Description
+    if (shortDescLen > 0) {
+      const ok = shortDescLen <= 160;
+      counter.innerHTML = `Short Description: <span style="color:${ok ? 'var(--green-text)' : '#d47777'}">${shortDescLen}</span> / 160 chars`;
+    } else {
+      counter.textContent = "";
+    }
   }
-}
 
-// ══════════════════════════════════════════════
-// SCRAPER HELPERS
-// ══════════════════════════════════════════════
-async function fetchProxy(url) {
-  const res = await fetch(
-    "https://corsproxy.io/?url=" + encodeURIComponent(url)
-  );
-  return await res.text();
-}
-
-function parseFragrantica(html) {
-  return {
-    top: extract(html, "top"),
-    heart: extract(html, "middle"),
-    base: extract(html, "base"),
-    accords: extractAccords(html),
-    gender: detectGender(html),
-    concentration: "EDT",
-    season: "All Seasons",
-    occasion: "Versatile",
-    longevity: extractLongevity(html),
-    sillage: extractSillage(html),
-    vibe: "Refined"
-  };
-}
-
-function extract(html, type) {
-  const section = html.match(new RegExp(type + " notes?[\\s\\S]{0,1200}", "i"));
-  if (!section) return "";
-
-  const notes = [...section[0].matchAll(/title="([^"]+)"/g)]
-    .map(m => m[1])
-    .slice(0, 8);
-
-  return notes.join(", ");
-}
-
-function extractAccords(html) {
-  const accords = [...html.matchAll(/class="accord[^"]*">([^<]+)/gi)]
-    .map(m => m[1])
-    .slice(0, 6);
-
-  return accords.join(", ");
-}
-
-function detectGender(html) {
-  if (/for men/i.test(html)) return "Men";
-  if (/for women/i.test(html)) return "Women";
-  if (/for women and men/i.test(html)) return "Unisex";
-  return "Unisex";
-}
-
-function extractLongevity(html) {
-  const m = html.match(/(long lasting|moderate|weak)/i);
-  return m ? m[1] : "Moderate";
-}
-
-function extractSillage(html) {
-  const m = html.match(/(strong|moderate|soft)/i);
-  return m ? m[1] : "Moderate";
-}
-
-function extractHouse(url) {
-  const m = url.match(/\/perfume\/([^/]+)\//);
-  return m ? m[1].replace(/-/g, " ") : "";
-}
-
-function normalizeName(name) {
-  const fixes = {
-    "dior suvage": "Dior Sauvage",
-    "suvage": "Dior Sauvage",
-    "creed": "Creed Aventus"
-  };
-  return fixes[name.toLowerCase()] || name;
-}
+  // ── Copy SEO to clipboard ─────────────────────────────────────────────
+  async function copySEO() {
+    if (!currentSEORaw) return;
+    const btn = document.getElementById("copyBtn");
+    try {
+      await navigator.clipboard.writeText(currentSEORaw);
+      btn.classList.add("copied");
+      btn.querySelector("svg").style.display = "none";
+      btn.childNodes[btn.childNodes.length - 1].textContent = " Copied!";
+      setTimeout(() => {
+        btn.classList.remove("copied");
+        btn.querySelector("svg").style.display = "";
+        btn.childNodes[btn.childNodes.length - 1].textContent = " Copy";
+      }, 2000);
+    } catch {
+      btn.childNodes[btn.childNodes.length - 1].textContent = " Failed";
+      setTimeout(() => {
+        btn.childNodes[btn.childNodes.length - 1].textContent = " Copy";
+      }, 2000);
+    }
+  }
 </script>
 
 </body>
