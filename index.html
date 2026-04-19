@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Namarq AI Tool</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f5f5f5;
+  padding: 40px;
+}
+
+.container {
+  max-width: 600px;
+  margin: auto;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+button {
+  background: black;
+  color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>Namarq SEO Tool</h2>
+
+<input id="name" placeholder="Product Name">
+<input id="gender" placeholder="Gender">
+<input id="top" placeholder="Top Notes">
+<input id="heart" placeholder="Heart Notes">
+<input id="base" placeholder="Base Notes">
+<input id="vibe" placeholder="Vibe">
+
+<button onclick="generate()">Generate</button>
+
+<pre id="result"></pre>
+</div>
+
+<script>
+async function generate() {
+
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: name.value,
+      gender: gender.value,
+      top: top.value,
+      heart: heart.value,
+      base: base.value,
+      vibe: vibe.value
+    })
+  });
+
+  const data = await res.json();
+  result.innerText = data.output;
+}
+</script>
+
+</body>
+</html>
