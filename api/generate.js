@@ -1,6 +1,7 @@
 // =============================================================================
-// Namarq AI – Perfume SEO Generator  v3.1
+// Namarq AI – Perfume SEO Generator  v3.3
 // api/generate.js  (Vercel Serverless Function – ES Module)
+// Uses only free OpenRouter models. Switches to JSON output for reliability.
 // =============================================================================
 
 export default async function handler(req, res) {
@@ -18,141 +19,117 @@ export default async function handler(req, res) {
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
       .join(" ");
 
-    // ── STAGE 1: Olfactory Profile Extraction ─────────────────────────────
-    const prompt = `You are a fragrance database expert. Extract the olfactory profile for the perfume "${name}".
+    // ── STAGE 1: Profile via JSON (much more reliable than key-value) ──────
+    // JSON is a format all models understand natively — no formatting failures
+    const profilePrompt = `You are a fragrance expert. Return the olfactory profile for the perfume "${name}".
 
-CRITICAL RULES:
-- Respond ONLY with the key-value pairs below, nothing else
-- No markdown, no bold, no asterisks, no bullet points, no extra lines
-- Use exactly this format: KEY: value
-- If unsure, make a reasonable guess — never leave a value empty
+Respond with ONLY valid JSON. No markdown, no code blocks, no backticks, no explanation. Just raw JSON.
 
-CANONICAL_NAME: ${name}
-HOUSE: [brand/house name]
-TOP: [top notes, comma separated]
-HEART: [heart notes, comma separated]
-BASE: [base notes, comma separated]
-ACCORDS: [main accords, comma separated]
-GENDER: [Men / Women / Unisex]
-CONCENTRATION: [EDP / EDT / Parfum / EDC]
-SEASON: [seasons, comma separated]
-OCCASION: [occasions, comma separated]
-VIBE: [3-5 descriptive adjectives]
-LONGEVITY: [Weak / Moderate / Good / Excellent]
-SILLAGE: [Soft / Moderate / Strong / Beast]`;
+{
+  "canonicalName": "${name}",
+  "house": "brand name here",
+  "top": "note1, note2, note3",
+  "heart": "note1, note2, note3",
+  "base": "note1, note2, note3",
+  "accords": "accord1, accord2, accord3",
+  "gender": "Men or Women or Unisex",
+  "concentration": "EDP or EDT or Parfum",
+  "season": "Spring, Summer, Fall, Winter",
+  "occasion": "occasions here",
+  "vibe": "adjective1, adjective2, adjective3",
+  "longevity": "Moderate or Good or Excellent",
+  "sillage": "Moderate or Strong or Beast"
+}
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OR_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://namarq.store",
-        "X-Title": "Namarq AI",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp:free",
-        temperature: 0.1,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+Rules:
+- Fill every field. Never use null or empty string.
+- If unsure, use your best fragrance knowledge.
+- Return ONLY the JSON object, nothing else.`;
 
-    const data = await response.json();
-    const text = data?.choices?.[0]?.message?.content || "";
+    // Try meta-llama first (very instruction-following)
+    let text = await callOpenRouter(OR_KEY, "meta-llama/llama-3.1-8b-instruct:free", profilePrompt, 0.1, 600);
 
-    // ── Robust Parser ──────────────────────────────────────────────────────
-    // Handles: markdown bold (**KEY:**), bullets (- KEY:), extra whitespace,
-    // colons inside values, and keys with spaces (e.g. "CANONICAL NAME")
-    const profile = {};
-    const lines = text.split("\n");
+    // Parse JSON profile
+    let profile = parseJSON(text);
 
-    lines.forEach((line) => {
-      // Strip markdown: bold markers, leading dashes/bullets, extra spaces
-      const cleaned = line
-        .replace(/\*\*/g, "")
-        .replace(/^[\s\-•*]+/, "")
-        .trim();
+    // If llama failed, try Gemini
+    if (!profile || !profile.top || profile.top === "") {
+      text = await callOpenRouter(OR_KEY, "google/gemini-2.0-flash-exp:free", profilePrompt, 0.1, 600);
+      profile = parseJSON(text);
+    }
 
-      if (!cleaned) return;
+    // If both failed, try mistral
+    if (!profile || !profile.top || profile.top === "") {
+      text = await callOpenRouter(OR_KEY, "mistralai/mistral-7b-instruct:free", profilePrompt, 0.1, 600);
+      profile = parseJSON(text);
+    }
 
-      const colonIdx = cleaned.indexOf(":");
-      if (colonIdx === -1) return;
+    // Last resort hardcoded fallback so UI is never empty
+    if (!profile) {
+      profile = {
+        canonicalName: name,
+        house: "Unknown",
+        top: "—",
+        heart: "—",
+        base: "—",
+        accords: "—",
+        gender: "—",
+        concentration: "—",
+        season: "—",
+        occasion: "—",
+        vibe: "—",
+        longevity: "—",
+        sillage: "—",
+      };
+    }
 
-      const rawKey = cleaned.slice(0, colonIdx).trim();
-      const val = cleaned.slice(colonIdx + 1).trim();
-
-      // Normalize key: uppercase + spaces → underscores
-      const key = rawKey.toUpperCase().replace(/\s+/g, "_");
-
-      // Skip empty or placeholder values
-      if (!key || !val || val === "—" || val === "-" || val === "") return;
-
-      profile[key] = val;
-    });
-
-    // ── Confidence Check ───────────────────────────────────────────────────
-    const filledFields = ["TOP", "HEART", "BASE", "ACCORDS", "GENDER"].filter(
-      (k) => profile[k] && profile[k] !== "—"
+    // ── Confidence Score ───────────────────────────────────────────────────
+    const filledFields = ["top", "heart", "base", "accords", "gender"].filter(
+      (k) => profile[k] && profile[k] !== "—" && profile[k] !== ""
     ).length;
-    const confidence = filledFields >= 3 ? "high" : filledFields >= 1 ? "medium" : "low";
+    const confidence = filledFields >= 4 ? "high" : filledFields >= 2 ? "medium" : "low";
 
-    const finalName = profile.CANONICAL_NAME || name;
-    const house = profile.HOUSE || "Namarq";
+    const finalName = profile.canonicalName || name;
+    const house = profile.house || "Namarq";
     const slug = finalName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
     // ── STAGE 2: SEO Generation ────────────────────────────────────────────
-    const profileSummary = [
-      profile.TOP && `Top: ${profile.TOP}`,
-      profile.HEART && `Heart: ${profile.HEART}`,
-      profile.BASE && `Base: ${profile.BASE}`,
-      profile.ACCORDS && `Accords: ${profile.ACCORDS}`,
-      profile.GENDER && `Gender: ${profile.GENDER}`,
-      profile.SEASON && `Season: ${profile.SEASON}`,
-    ]
-      .filter(Boolean)
-      .join(". ");
+    const seoPrompt = `Write SEO content for the perfume "${finalName}" by ${house}.
+Fragrance notes — Top: ${profile.top}. Heart: ${profile.heart}. Base: ${profile.base}.
+Accords: ${profile.accords}. Gender: ${profile.gender}. Season: ${profile.season}.
 
-    const seoPrompt = `Write luxury perfume SEO content for "${finalName}" by ${house}.
-Profile: ${profileSummary}
-
-Output exactly these 5 sections with these exact headers (no extra text before or after):
+Output EXACTLY these 5 sections with no extra text before or after:
 
 ## Short Description
-[2-3 sentences, evocative luxury language, mention key notes]
+[Luxury evocative description. STRICT MAXIMUM 160 characters. Count every character.]
 
 ## Meta Title
-[format: ${finalName} – ${house} | Namarq Egypt, under 60 chars]
+[Under 60 characters: ${finalName} – ${house} | Namarq Egypt]
 
 ## Meta Description
-[155 chars max, include key notes + call to action, mention Namarq Egypt]
+[Under 155 characters. Mention key notes and "Shop at Namarq Egypt".]
 
 ## Product URL
 /product/${slug}
 
 ## SEO Tags
-[10-15 comma separated tags: fragrance name, notes, brand, "perfume Egypt", "buy ${finalName} Egypt", etc.]`;
+[12-15 comma separated: ${finalName}, ${house}, perfume Egypt, buy ${finalName} Egypt, Namarq, plus note names]`;
 
-    const seoResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OR_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://namarq.store",
-        "X-Title": "Namarq AI",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp:free",
-        temperature: 0.7,
-        messages: [{ role: "user", content: seoPrompt }],
-      }),
-    });
+    let seoText = await callOpenRouter(OR_KEY, "google/gemini-2.0-flash-exp:free", seoPrompt, 0.7, 700);
 
-    const seoData = await seoResponse.json();
-    const seoText =
-      seoData?.choices?.[0]?.message?.content ||
-      buildFallbackSEO(finalName, house, profile, slug);
+    if (!seoText || !seoText.includes("## Short Description")) {
+      seoText = await callOpenRouter(OR_KEY, "meta-llama/llama-3.1-8b-instruct:free", seoPrompt, 0.7, 700);
+    }
+
+    if (!seoText || !seoText.includes("## Short Description")) {
+      seoText = buildFallbackSEO(finalName, house, profile, slug);
+    }
+
+    // Hard-enforce 160-char Short Description
+    seoText = enforceShortDescLimit(seoText, 160);
 
     // ── Final Response ─────────────────────────────────────────────────────
     return res.status(200).json({
@@ -161,48 +138,108 @@ Output exactly these 5 sections with these exact headers (no extra text before o
       slug,
       confidence,
       profile: {
-        top: profile.TOP || "—",
-        heart: profile.HEART || "—",
-        base: profile.BASE || "—",
-        accords: profile.ACCORDS || "—",
-        gender: profile.GENDER || "—",
-        concentration: profile.CONCENTRATION || "—",
-        season: profile.SEASON || "—",
-        occasion: profile.OCCASION || "—",
-        longevity: profile.LONGEVITY || "—",
-        sillage: profile.SILLAGE || "—",
-        character: profile.VIBE || "—",
+        top: profile.top || "—",
+        heart: profile.heart || "—",
+        base: profile.base || "—",
+        accords: profile.accords || "—",
+        gender: profile.gender || "—",
+        concentration: profile.concentration || "—",
+        season: profile.season || "—",
+        occasion: profile.occasion || "—",
+        longevity: profile.longevity || "—",
+        sillage: profile.sillage || "—",
+        character: profile.vibe || "—",
       },
       seo: seoText,
-      // Debug: remove this in production if you want
-      _debug: {
-        rawText: text,
-        parsedKeys: Object.keys(profile),
-      },
     });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error", detail: err.message });
   }
 }
 
+// ── Call any OpenRouter model ─────────────────────────────────────────────────
+async function callOpenRouter(apiKey, model, prompt, temperature = 0.3, maxTokens = 600) {
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://namarq.store",
+        "X-Title": "Namarq AI",
+      },
+      body: JSON.stringify({
+        model,
+        temperature,
+        max_tokens: maxTokens,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content || "";
+  } catch {
+    return "";
+  }
+}
+
+// ── Parse JSON from model output (handles code fences & extra text) ───────────
+function parseJSON(text) {
+  if (!text) return null;
+  try {
+    // Strip markdown code fences if present
+    const stripped = text
+      .replace(/```json\s*/gi, "")
+      .replace(/```\s*/g, "")
+      .trim();
+
+    // Find first { and last } to extract JSON object
+    const start = stripped.indexOf("{");
+    const end = stripped.lastIndexOf("}");
+    if (start === -1 || end === -1) return null;
+
+    const jsonStr = stripped.slice(start, end + 1);
+    const parsed = JSON.parse(jsonStr);
+
+    // Validate it has at least one note field
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+// ── Enforce 160-char Short Description ───────────────────────────────────────
+function enforceShortDescLimit(seoText, limit = 160) {
+  return seoText.replace(
+    /(## Short Description\s*\n)([\s\S]*?)(\n## )/,
+    (match, header, body, next) => {
+      let trimmed = body.trim();
+      if (trimmed.length > limit) {
+        trimmed = trimmed.slice(0, limit - 1).replace(/[,\s]+$/, "") + ".";
+      }
+      return `${header}${trimmed}${next}`;
+    }
+  );
+}
+
+// ── Fallback SEO ──────────────────────────────────────────────────────────────
 function buildFallbackSEO(name, house, profile, slug) {
-  const top = profile.TOP || "citrus and spice";
-  const heart = profile.HEART || "floral and woody accords";
-  const base = profile.BASE || "musk and amber";
+  const top = profile.top || "citrus and spice";
+  const base = profile.base || "musk and amber";
+  const shortDesc = `${name} by ${house} — ${top} over a warm base of ${base}.`.slice(0, 160);
 
   return `## Short Description
-
-${name} by ${house} opens with ${top}, blossoming into a heart of ${heart}, before settling into a warm foundation of ${base}. A captivating fragrance that commands attention and leaves a lasting impression.
+${shortDesc}
 
 ## Meta Title
 ${name} – ${house} | Namarq Egypt
 
 ## Meta Description
-Shop ${name} by ${house} at Namarq Egypt. Featuring ${top}. Free delivery on orders over 1500 EGP. Authentic fragrance guaranteed.
+Shop ${name} by ${house} at Namarq Egypt. Free delivery on orders over 1500 EGP. Authentic guaranteed.
 
 ## Product URL
 /product/${slug}
 
 ## SEO Tags
-${name}, ${name} perfume, ${house} fragrance, buy ${name} Egypt, ${name} Namarq, perfume Egypt, luxury fragrance Egypt, ${top}, ${base}, Namarq Egypt`;
+${name}, ${house}, ${name} perfume, buy ${name} Egypt, perfume Egypt, luxury fragrance Egypt, Namarq Egypt, ${top}, ${base}`;
 }
