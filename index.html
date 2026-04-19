@@ -1,96 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Namarq AI Tool</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Namarq AI</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@300;400&family=EB+Garamond&display=swap" rel="stylesheet">
 
 <style>
-* {
-  box-sizing: border-box;
+:root {
+  --ivory: #FAF8F4;
+  --olive: #6B705C;
+  --brown: #3E2F23;
+  --beige: #D6CCC2;
+  --amber: #A47148;
 }
 
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #0f172a, #020617);
-  color: white;
+  background: var(--ivory);
+  color: var(--brown);
+  font-family: 'EB Garamond', serif;
 }
 
 /* container */
 .container {
-  max-width: 1100px;
+  max-width: 900px;
   margin: auto;
-  padding: 40px;
+  padding: 80px 30px;
+}
+
+/* logo */
+.logo {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.logo h1 {
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.5em;
+  font-weight: 300;
+}
+
+.logo span {
+  font-family: 'Montserrat';
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  color: var(--olive);
 }
 
 /* card */
 .card {
-  background: #111827;
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-  transform: perspective(1000px) rotateX(2deg);
+  background: white;
+  padding: 40px;
+  border: 1px solid var(--beige);
 }
 
-/* title */
-h1 {
-  margin-bottom: 10px;
-}
-
-.subtitle {
-  color: #9ca3af;
-  margin-bottom: 30px;
-}
-
-/* grid */
+/* inputs */
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 15px;
 }
 
 input {
   padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: #1f2937;
-  color: white;
+  border: 1px solid var(--beige);
+  background: transparent;
+  font-family: 'EB Garamond';
 }
 
 /* button */
 button {
+  margin-top: 30px;
   width: 100%;
   padding: 14px;
-  border-radius: 12px;
   border: none;
-  margin-top: 20px;
-  background: linear-gradient(90deg, #00BD7D, #00ffa2);
-  font-weight: bold;
+  background: var(--brown);
+  color: white;
+  letter-spacing: 0.2em;
   cursor: pointer;
-  transition: 0.3s;
 }
 
 button:hover {
-  transform: scale(1.05);
+  background: var(--olive);
 }
 
 /* result */
 .result {
-  margin-top: 30px;
-  background: #020617;
-  padding: 20px;
-  border-radius: 15px;
+  margin-top: 40px;
+  padding: 30px;
+  border: 1px solid var(--beige);
+  background: #fff;
   white-space: pre-wrap;
-  border: 1px solid #1f2937;
+  line-height: 1.8;
 }
 
-/* copy button */
+/* copy */
 .copy {
-  margin-top: 10px;
-  background: #1f2937;
+  margin-top: 15px;
+  background: transparent;
+  border: 1px solid var(--brown);
+  color: var(--brown);
 }
 </style>
 </head>
@@ -99,24 +110,25 @@ button:hover {
 
 <div class="container">
 
+  <div class="logo">
+    <h1>NAMARQ</h1>
+    <span>PERFUME HOUSE</span>
+  </div>
+
   <div class="card">
-    <h1>Namarq AI Generator</h1>
-    <p class="subtitle">Generate SEO perfume descriptions instantly</p>
 
     <div class="grid">
       <input id="name" placeholder="Product Name">
       <input id="gender" placeholder="Gender">
-
       <input id="top" placeholder="Top Notes">
       <input id="heart" placeholder="Heart Notes">
-
       <input id="base" placeholder="Base Notes">
-      <input id="vibe" placeholder="Vibe / Occasion">
+      <input id="vibe" placeholder="Vibe">
     </div>
 
-    <button onclick="generate()" id="btn">GENERATE</button>
+    <button onclick="generate()">GENERATE</button>
 
-    <div class="result" id="result">Your result will appear here...</div>
+    <div id="result" class="result"></div>
 
     <button class="copy" onclick="copyText()">Copy Output</button>
 
@@ -126,11 +138,6 @@ button:hover {
 
 <script>
 async function generate() {
-
-  const btn = document.getElementById("btn");
-  btn.innerText = "Generating...";
-  btn.disabled = true;
-
   const data = {
     name: name.value,
     gender: gender.value,
@@ -140,28 +147,19 @@ async function generate() {
     vibe: vibe.value
   };
 
-  try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(data)
-    });
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  });
 
-    const resultData = await res.json();
-
-    result.innerText = resultData.output;
-
-  } catch {
-    result.innerText = "❌ Error generating content";
-  }
-
-  btn.innerText = "GENERATE";
-  btn.disabled = false;
+  const json = await res.json();
+  result.innerText = json.output;
 }
 
 function copyText() {
   navigator.clipboard.writeText(result.innerText);
-  alert("Copied!");
+  alert("Copied");
 }
 </script>
 
