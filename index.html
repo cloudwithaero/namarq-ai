@@ -23,21 +23,19 @@ body {
   font-family: 'EB Garamond', serif;
 }
 
-/* layout */
 .container {
-  max-width: 900px;
+  max-width: 800px;
   margin: auto;
-  padding: 80px 30px;
+  padding: 80px 20px;
 }
 
-/* logo */
 .logo {
   text-align: center;
   margin-bottom: 50px;
 }
 
 .logo h1 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cormorant Garamond';
   letter-spacing: 0.5em;
   font-weight: 300;
 }
@@ -49,30 +47,24 @@ body {
   color: var(--olive);
 }
 
-/* card */
 .card {
   background: white;
   padding: 40px;
   border: 1px solid var(--beige);
 }
 
-/* inputs */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
+/* INPUT */
 input {
-  padding: 12px;
+  width: 100%;
+  padding: 14px;
   border: 1px solid var(--beige);
-  background: transparent;
   font-family: 'EB Garamond';
+  font-size: 16px;
 }
 
-/* button */
+/* BUTTON */
 button {
-  margin-top: 30px;
+  margin-top: 20px;
   width: 100%;
   padding: 14px;
   border: none;
@@ -86,20 +78,19 @@ button:hover {
   background: var(--olive);
 }
 
-/* result container */
+/* RESULT */
 .result {
-  margin-top: 50px;
-  padding: 40px;
+  margin-top: 40px;
+  padding: 30px;
   border: 1px solid var(--beige);
   background: #fff;
-  line-height: 1.9;
+  line-height: 1.8;
 }
 
 /* headings */
 .result h2 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cormorant Garamond';
   font-size: 26px;
-  margin-bottom: 10px;
 }
 
 .result h3 {
@@ -108,27 +99,20 @@ button:hover {
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--olive);
-  margin-top: 25px;
 }
 
-/* highlight paragraph */
-.result p {
-  margin: 10px 0;
-}
-
+/* highlight */
 .result p:first-of-type {
   font-style: italic;
-  font-size: 18px;
   border-left: 2px solid var(--amber);
   padding-left: 15px;
 }
 
-/* copy button */
-.copy {
-  margin-top: 15px;
-  background: transparent;
-  border: 1px solid var(--brown);
-  color: var(--brown);
+/* loading */
+.loading {
+  text-align: center;
+  font-family: 'Montserrat';
+  letter-spacing: 0.2em;
 }
 </style>
 </head>
@@ -144,20 +128,12 @@ button:hover {
 
   <div class="card">
 
-    <div class="grid">
-      <input id="name" placeholder="Product Name">
-      <input id="gender" placeholder="Gender">
-      <input id="top" placeholder="Top Notes">
-      <input id="heart" placeholder="Heart Notes">
-      <input id="base" placeholder="Base Notes">
-      <input id="vibe" placeholder="Vibe / Occasion">
-    </div>
+    <!-- ✅ INPUT واحد بس -->
+    <input id="nameInput" placeholder="Enter perfume name (e.g. Dior Sauvage)">
 
     <button onclick="generate()" id="btn">GENERATE</button>
 
     <div id="result" class="result"></div>
-
-    <button class="copy" onclick="copyText()">Copy Output</button>
 
   </div>
 
@@ -166,33 +142,33 @@ button:hover {
 <script>
 async function generate() {
 
+  const name = document.getElementById("nameInput").value.trim();
   const btn = document.getElementById("btn");
+  const result = document.getElementById("result");
+
+  if (!name) {
+    result.innerHTML = "<p>❌ Please enter perfume name</p>";
+    return;
+  }
+
   btn.innerText = "Generating...";
   btn.disabled = true;
 
-  const data = {
-    name: name.value,
-    gender: gender.value,
-    top: top.value,
-    heart: heart.value,
-    base: base.value,
-    vibe: vibe.value
-  };
+  result.innerHTML = "<div class='loading'>LOADING...</div>";
 
   try {
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(data)
+      body: JSON.stringify({ name })
     });
 
-    const json = await res.json();
+    const data = await res.json();
 
-    // 🔥 format output
-    result.innerHTML = formatOutput(json.output);
+    result.innerHTML = formatOutput(data.output);
 
   } catch {
-    result.innerHTML = "<p>❌ Error generating content</p>";
+    result.innerHTML = "<p>❌ Error</p>";
   }
 
   btn.innerText = "GENERATE";
@@ -200,28 +176,17 @@ async function generate() {
 }
 
 
-// ✨ format function (luxury rendering)
+// 🎨 format output
 function formatOutput(text) {
-
   if (!text) return "";
 
   let html = text;
-
   html = html.replace(/## (.*)/g, '<h2>$1</h2>');
   html = html.replace(/\*\*(.*?)\*\*/g, '<h3>$1</h3>');
   html = html.replace(/\n\n/g, '</p><p>');
-  html = html.replace(/\n/g, '<br>');
-
   html = "<p>" + html + "</p>";
 
   return html;
-}
-
-
-// copy
-function copyText() {
-  navigator.clipboard.writeText(result.innerText);
-  alert("Copied");
 }
 </script>
 
