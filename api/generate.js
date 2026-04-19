@@ -1,21 +1,29 @@
 export default async function handler(req, res) {
 
-  // allow only POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   const { name, gender, top, heart, base, vibe } = req.body;
 
-  // safety fallback
-  if (!name) {
-    return res.status(400).json({ error: "Missing product name" });
-  }
-
-  const prompt = `
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are an SEO engine. Output EXACT format only."
+          },
+          {
+            role: "user",
+            content: `
 You are the SEO Engine for Namarq Perfumes Egypt.
-
-I will give you ONLY 6 inputs about a perfume.
 
 ### MY INPUTS:
 1. Product Name: ${name}
@@ -25,7 +33,7 @@ I will give you ONLY 6 inputs about a perfume.
 5. Base Notes: ${base}
 6. Vibe/Occasion: ${vibe}
 
-### YOUR OUTPUT FORMAT (Copy Exactly):
+### OUTPUT FORMAT (Copy Exactly):
 
 ## Short description
 
@@ -38,56 +46,39 @@ New · SEO Recommended
 ## SEO settings
 
 **Product URL**
-../product/[slug]
-https://namarq-perfumes.online/en/product/all/[slug]
+../product/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
+https://namarq-perfumes.online/en/product/all/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
 
 **Title**
 
 60 characters max
 
-[${name} Perfume | Namarq Perfumes Egypt]
+${name} Perfume | Namarq Perfumes Egypt
 
 **Description**
 
 160 characters max
 
-[Shop ${name} at Namarq. A ${vibe} ${gender} fragrance. Free shipping on orders over 1500 LE.]
+Shop ${name} at Namarq. A ${vibe} ${gender} fragrance. Free shipping on orders over 1500 LE.
 
-### RULES:
-- English ONLY
-- NO extra text
-`;
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-5.3",
-        input: prompt
+STRICT: NO EXTRA TEXT
+`
+          }
+        ]
       })
     });
 
     const data = await response.json();
 
-    const output =
-      data.output?.[0]?.content?.[0]?.text || "Generation failed";
+    const output = data.choices?.[0]?.message?.content;
 
-    // simple validation (important)
-    if (!output.includes("## Short description")) {
-      return res.status(200).json({
-        output: "⚠️ AI format error — try again"
-      });
+    if (!output) {
+      return res.status(200).json({ output: "⚠️ AI error — try again" });
     }
 
     return res.status(200).json({ output });
 
-  } catch (error) {
-    return res.status(500).json({
-      error: "AI request failed"
-    });
+  } catch (err) {
+    return res.status(500).json({ error: "AI failed" });
   }
 }
