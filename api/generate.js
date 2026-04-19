@@ -4,7 +4,20 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Method not allowed" });
     }
 
-    const { name, gender, top, heart, base, vibe } = req.body;
+    // 🛡️ تأمين القيم (مافيش undefined)
+    const name   = (req.body?.name   || "").trim();
+    const gender = (req.body?.gender || "").trim();
+    const top    = (req.body?.top    || "").trim();
+    const heart  = (req.body?.heart  || "").trim();
+    const base   = (req.body?.base   || "").trim();
+    const vibe   = (req.body?.vibe   || "").trim();
+
+    // 🛡️ slug آمن (مايكراش)
+    const slug = (name || "product")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
 
     const prompt = `
 You are the SEO Engine for Namarq Perfumes Egypt.
@@ -25,30 +38,29 @@ New · SEO Recommended
 
 [Count]/200 (Recommended)
 
-[A tropical & exotic ${gender} fragrance. ${top}, ${heart} & ${base}. A bold statement scent at Namarq Egypt.]
+[A tropical & exotic ${gender || "unisex"} fragrance. ${top}, ${heart} & ${base}. A bold statement scent at Namarq Egypt.]
 
 ## SEO settings
 
 **Product URL**
-../product/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
-https://namarq-perfumes.online/en/product/all/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
+../product/${slug}
+https://namarq-perfumes.online/en/product/all/${slug}
 
 **Title**
 
 60 characters max
 
-${name} Perfume | Namarq Perfumes Egypt
+${name || "Perfume"} Perfume | Namarq Perfumes Egypt
 
 **Description**
 
 160 characters max
 
-Shop ${name} at Namarq. A ${vibe} ${gender} fragrance. Free shipping on orders over 1500 LE.
+Shop ${name || "this perfume"} at Namarq. A ${vibe || "refined"} ${gender || "unisex"} fragrance. Free shipping on orders over 1500 LE.
 
 STRICT: NO EXTRA TEXT
 `;
 
-    // 🔥 function to call model
     async function callModel(model) {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -65,10 +77,10 @@ STRICT: NO EXTRA TEXT
       return await response.json();
     }
 
-    // 🟢 Primary model
+    // 🟢 Primary
     let data = await callModel("meta-llama/llama-3-8b-instruct:free");
 
-    // 🔁 Fallback لو rate limited
+    // 🔁 Fallback لو 429
     if (data?.error?.code === 429) {
       data = await callModel("google/gemini-2.0-flash-exp:free");
     }
