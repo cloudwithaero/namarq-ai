@@ -1,31 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Namarq AI Tool</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
 <style>
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial;
-  background: #f5f5f5;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: white;
+}
+
+/* container */
+.container {
+  max-width: 1100px;
+  margin: auto;
   padding: 40px;
 }
 
-.container {
-  max-width: 600px;
-  margin: auto;
+/* card */
+.card {
+  background: #111827;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+  transform: perspective(1000px) rotateX(2deg);
 }
 
-input, button {
-  width: 100%;
-  padding: 12px;
+/* title */
+h1 {
   margin-bottom: 10px;
 }
 
-button {
-  background: black;
+.subtitle {
+  color: #9ca3af;
+  margin-bottom: 30px;
+}
+
+/* grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+input {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #1f2937;
   color: white;
+}
+
+/* button */
+button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  margin-top: 20px;
+  background: linear-gradient(90deg, #00BD7D, #00ffa2);
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+/* result */
+.result {
+  margin-top: 30px;
+  background: #020617;
+  padding: 20px;
+  border-radius: 15px;
+  white-space: pre-wrap;
+  border: 1px solid #1f2937;
+}
+
+/* copy button */
+.copy {
+  margin-top: 10px;
+  background: #1f2937;
 }
 </style>
 </head>
@@ -33,38 +98,70 @@ button {
 <body>
 
 <div class="container">
-<h2>Namarq SEO Tool</h2>
 
-<input id="name" placeholder="Product Name">
-<input id="gender" placeholder="Gender">
-<input id="top" placeholder="Top Notes">
-<input id="heart" placeholder="Heart Notes">
-<input id="base" placeholder="Base Notes">
-<input id="vibe" placeholder="Vibe">
+  <div class="card">
+    <h1>Namarq AI Generator</h1>
+    <p class="subtitle">Generate SEO perfume descriptions instantly</p>
 
-<button onclick="generate()">Generate</button>
+    <div class="grid">
+      <input id="name" placeholder="Product Name">
+      <input id="gender" placeholder="Gender">
 
-<pre id="result"></pre>
+      <input id="top" placeholder="Top Notes">
+      <input id="heart" placeholder="Heart Notes">
+
+      <input id="base" placeholder="Base Notes">
+      <input id="vibe" placeholder="Vibe / Occasion">
+    </div>
+
+    <button onclick="generate()" id="btn">GENERATE</button>
+
+    <div class="result" id="result">Your result will appear here...</div>
+
+    <button class="copy" onclick="copyText()">Copy Output</button>
+
+  </div>
+
 </div>
 
 <script>
 async function generate() {
 
-  const res = await fetch("/api/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: name.value,
-      gender: gender.value,
-      top: top.value,
-      heart: heart.value,
-      base: base.value,
-      vibe: vibe.value
-    })
-  });
+  const btn = document.getElementById("btn");
+  btn.innerText = "Generating...";
+  btn.disabled = true;
 
-  const data = await res.json();
-  result.innerText = data.output;
+  const data = {
+    name: name.value,
+    gender: gender.value,
+    top: top.value,
+    heart: heart.value,
+    base: base.value,
+    vibe: vibe.value
+  };
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(data)
+    });
+
+    const resultData = await res.json();
+
+    result.innerText = resultData.output;
+
+  } catch {
+    result.innerText = "❌ Error generating content";
+  }
+
+  btn.innerText = "GENERATE";
+  btn.disabled = false;
+}
+
+function copyText() {
+  navigator.clipboard.writeText(result.innerText);
+  alert("Copied!");
 }
 </script>
 
